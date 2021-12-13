@@ -1,0 +1,105 @@
+{ "tables":
+    [
+      { "tableName": "upload_sessions"
+        ,"createScript":"CREATE  TABLE  upload_sessions (session_id INTEGER PRIMARY KEY, server_name  TEXT,    server_ip   TEXT,  bucket_name TEXT,  upload_path TEXT, upload_count INTEGER, start_time  TEXT, end_time TEXT, status INT,  gateway TEXT)"
+        ,"indexes":[
+            {
+            "indexName":"ix_server_name"
+            ,"isUnique":false
+            ,"columns":["server_name"]
+            }
+            , {
+            "indexName":"ix_server_ip"
+            ,"isUnique":false
+            ,"columns":["server_ip"]
+            }  
+            , {
+            "indexName":"ix_bucket_name"
+            ,"isUnique":false
+            ,"columns":["bucket_name"]
+            }
+            , {
+            "indexName":"ix_upload_path"
+            ,"isUnique":false
+            ,"columns":["upload_path"]
+            }
+            , {
+              "indexName":"ix_start_time"
+              ,"isUnique":false
+              ,"columns":["start_time"]
+              }
+              , {
+                "indexName":"ix_end_time"
+                ,"isUnique":false
+                ,"columns":["end_time"]
+                }
+                , {
+                  "indexName":"ix_all"
+                  ,"isUnique":false
+                  ,"columns":["session_id", "server_name",    "server_ip",  "bucket_name",  "upload_path", "upload_count", "start_time", "end_time", "status",  "gateway"]
+                  }
+        ]
+      },
+      {"tableName": "upload_items"
+        ,"createScript":"CREATE  TABLE  upload_items (item_id INTEGER PRIMARY KEY, session_id INTEGER , parent_folder  TEXT,    file_name   TEXT,  creation_time TEXT,  upload_path TEXT, file_size INTEGER, upload_start_time  TEXT, upload_end_time TEXT, file_url TEXT,  upload_status INTEGER)"
+        ,"indexes":[
+          {
+            "indexName":"ix_session_id"
+            ,"isUnique":false
+            ,"columns":["session_id"]
+            }
+            , {
+              "indexName":"ix_parent_folder"
+              ,"isUnique":false
+              ,"columns":["parent_folder"]
+              }
+              , {
+                "indexName":"ix_file_name"
+                ,"isUnique":false
+                ,"columns":["file_name"]
+                }
+                , {
+                  "indexName":"ix_creation_time"
+                  ,"isUnique":false
+                  ,"columns":["creation_time"]
+                  }
+                  , {
+                    "indexName":"ix_upload_path"
+                    ,"isUnique":false
+                    ,"columns":["upload_path"]
+                    }
+                    , {
+                      "indexName":"ix_upload_start_time"
+                      ,"isUnique":false
+                      ,"columns":["upload_start_time"]
+                      }
+                      , {
+                        "indexName":"ix_upload_end_time"
+                        ,"isUnique":false
+                        ,"columns":["upload_end_time"]
+                        }
+                        , {
+                          "indexName":"ix_all"
+                          ,"isUnique":false
+                          ,"columns":["item_id", "session_id" , "parent_folder",    "file_name",  "creation_time", "upload_path", "file_size", "upload_start_time", "upload_end_time", "file_url", "upload_status"]
+                          }
+
+        ]
+
+
+      }
+
+    ]
+  ,"queries":
+    {
+       "select":  "SELECT column_name_placeholder FROM table_name_placeholder  WHERE column_value_set_map_placeholder"
+      ,"insert":  "REPLACE INTO table_name_placeholder (column_names_placeholder) VALUES (values_placeholder)"
+      , "update": "UPDATE table_name_placeholder SET  column_value_set_map_placeholder  WHERE column_value_set_map_placeholder"
+      , "delete": "DELETE FROM table_name_placeholder WHERE  column_value_set_map_placeholder"
+      , "max":    "SELECT IFNULL(MAX(column_name_placeholder), 0)  AS max_column_name_placeholder FROM  table_name_placeholder WHERE column_value_set_map_placeholder"
+      , "min":    "SELECT IFNULL(MIN(column_name_placeholder), 0)  AS min_column_name_placeholder FROM  table_name_placeholder WHERE column_value_set_map_placeholder"
+      , "count":  "SELECT COUNT(column_name_placeholder)  AS  count_column_name_placeholder  FROM  table_name_placeholder WHERE column_value_set_map_placeholder"
+    }
+
+
+}

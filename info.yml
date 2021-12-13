@@ -1,0 +1,28 @@
+ - Task
+    - Copy Database backup to StorageGRID
+ - Requirements
+    - StorageGRID 
+    - DB Server
+    - Access to grid
+    - permissions to copy file
+    - permissions to create new buckets and upload files
+    - ability to download files when needed
+    - inventory of uploaded files and the URLs to access them
+ - Entities
+    - Grid gateway
+    - Database Server
+    - Root folder of backup
+    - Individual backup files
+    - bucket (and its region)
+    - inventory
+ - Flow
+     - Database backup is taken and saved to a suitable location
+     - location is scanned for files
+     - files are compared with local inventory to filter out unprocessed files.
+     - connection to grid gateway is established
+     - bucket is fetched from inventory or new bucket is created
+     - file is uploaded to bucket
+     - Url and other metadata are saved to local inventory
+     - Notification is sent to show summary of uploaded file
+     - If an error is generated at any point, a notification is sent
+     - log files are created for each run

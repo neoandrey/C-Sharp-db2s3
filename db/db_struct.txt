@@ -1,0 +1,42 @@
+upload_sessions
+	session_id 
+	server_name
+	server_ip
+	bucket_name
+	upload_path
+	upload_count
+	start_time
+	end_time
+	status
+	gateway
+	
+CREATE  TABLE  upload_sessions (session_id INTEGER PRIMARY KEY, server_name  TEXT,    server_ip   TEXT,  bucket_name TEXT,  upload_path TEXT, upload_count INTEGER, start_time  TEXT, end_time TEXT, status INT,  gateway TEXT)
+ - indexes 
+     - server_name
+     - server_ip
+     - bucket_name
+     - upload_path
+     - start_time
+     - end_time
+     
+upload_items 
+        item_id
+ 	session_id
+ 	parent_folder
+ 	file_name
+ 	creation_time
+ 	file_size
+ 	upload_start_time
+ 	upload_end_time
+ 	file_url
+ 	upload_status 
+ 	
+CREATE  TABLE  upload_sessions (item_id INTEGER PRIMARY KEY, session_id INTEGER , parent_folder  TEXT,    file_name   TEXT,  creation_time TEXT,  upload_path TEXT, file_size INTEGER, upload_start_time  TEXT, upload_end_time TEXT, file_url TEXT,  upload_status INTEGER)
+  - indexes
+    - session_id
+    - parent_folder
+    - file_name
+    - creation_time
+    - upload_path
+    - upload_start_time
+    - upload_end_time

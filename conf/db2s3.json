@@ -1,0 +1,59 @@
+{
+    "directoryOfUploadfiles": ""
+    ,"logFileName": "db2s3_log"
+    ,"bucketName": "db_backup_bucket"
+    ,"serverName":  "jump31"
+    ,"serverIPAddress": "172.25.30.31"
+    ,"additionalServerInfo":""
+    ,"sqliteDatabaseFile" : "" 
+    ,"accessID": ""
+    ,"accessKey": ""
+    ,"profile_path": ""
+    ,"profile_name":""
+    ,"use_profile_file" : false
+    ,"region":""
+    ,"s3Gateways":[
+        {
+         "address":"172.31.3.120"
+         ,"port": 8082
+         ,"protocol":"https"
+        }
+       ,{
+        "address":"172.31.3.121"
+        ,"port": 8082
+        ,"protocol":"https"
+       }
+       , {
+        "address":"172.19.45.120"
+        ,"port": 8082
+        ,"protocol":"https"
+       }
+       , {
+        "address":"172.19.45.121"
+        ,"port": 8082
+        ,"protocol":"https"
+       }    
+        ]
+    ,"centralInventoryServer": ""
+    ,"centralInventoryUser":""
+    ,"centralInventoryPassword":""
+    ,"centralInventoryDBName" :""
+    ,"runOnSchedule":  false
+    ,"scheduleName" :""
+    ,"sendNotification": true
+    ,"toAddress":""
+    ,"fromAddress" :""
+    ,"bccAddress":""
+    ,"ccAddress":""
+    ,"smtpServer":"" 
+    ,"smtpPort":""   
+    ,"sender":""   
+    ,"senderPassword":"" 
+    ,"isSSLEnabled": false
+    ,"alternateRowColour": ""
+    ,"emailFontFamily":""
+    ,"emailFontSize":""
+    ,"colour":""
+    ,"borderColour":""
+
+}
