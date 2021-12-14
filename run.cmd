@@ -1,17 +1,15 @@
-@echo off 
-echo "Do you want to commit the current  version of the application? (type  'y' or  'n'): "
-@echo off 
-set /p commit_response=  
-
-if  %commit_response%==y (
-  @echo off 
-  echo 'Please type commit  message: 
-  set /p commit_message=  
-  git add  .
-  git commit -m  "%commit_message%"
-) 
-
-cd %cd%
-%cd%\bin\ArbiterCopy.exe
-
+ @echo off
+ set proxy_filepath=%cd%\proxy.txt
+ echo "Checking proxy path: %proxy_filepath%"
+ IF EXIST "%proxy_filepath%" (
+   SET /p proxy_url=<"%proxy_filepath%"
+ )  ELSE (
+   echo "Please type proxy URL:"
+      set /p proxy_url=    
+ )
+echo  "%proxy_url%">%cd%\proxy.txt
+ echo "setting proxy as:%proxy_url%"
+ SET  HTTP_PROXY=%proxy_url%
+ SET  HTTPS_PROXY=%proxy_url%
+powershell  -File  %cd%\run.ps1
 pause

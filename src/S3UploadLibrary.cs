@@ -12,8 +12,8 @@ using System.Globalization;
 using System.Net.Mail;
 using Newtonsoft.Json.Linq;
 using System.Data.SQLite;
-using System.Reflection.BindingFlags;
-using System.Reflection.PropertyInfo;
+using System.Reflection;
+
 namespace db2s3{
 
             public class   S3UploadLibrary{

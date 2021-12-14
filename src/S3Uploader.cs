@@ -33,9 +33,16 @@ namespace db2s3{
 
         public  List<S3UploadEntity> entitiesToBeUploaded =  new List<S3UploadEntity> ();
         public S3Uploader(){
-
+             try{
                 new S3UploadLibrary();
                 this.runS3Upload();
+             }catch(Exception e){
+                Console.WriteLine("An error has occurred");
+                Console.WriteLine("Error: "+e.StackTrace);
+                S3UploadLibrary.writeToLog("An error has occurred");
+                S3UploadLibrary.writeToLog("Error: "+e.StackTrace);
+
+             }
 
         }
         public S3Uploader(string configFilePath){
@@ -59,6 +66,7 @@ namespace db2s3{
         }
   
         public  void runS3Upload(){
+            
             this.setUploadDirectory(S3UploadLibrary.directoryOfUploadfiles);
             this.setS3Gateways(S3UploadLibrary.s3Gateways);
             List<S3UploadEntity> allS3EntitiesInPath  = this.getUploadEntitiesFromPath(this.getUploadDirectory(), false);
@@ -67,6 +75,10 @@ namespace db2s3{
             this.setUploadSession(createUploadSession());
             List<S3UploadItem> itemsUploaded =  startEntityUploadSession(entitiesToBeUploaded);
             itemsUploaded.ForEach(x=>x.save());
+            this.getUploadSession().setUploadCount(itemsUploaded.Count);
+            this.getUploadSession().setEndTime(DateTime.Now);
+            this.getUploadSession().setStatus(S3UploadLibrary.SUCCESSFUL);
+            this.getUploadSession().save();
         }
  
         public S3UploadSession createUploadSession(){
