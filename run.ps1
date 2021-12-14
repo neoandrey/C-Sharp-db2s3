@@ -77,5 +77,5 @@
 
     }
 
-cd %cd%
-%cd%\bin\db2s3.exe 
+set-location  .
+.\bin\db2s3.exe 
