@@ -8,46 +8,44 @@ namespace db2s3
 {
 
     public class S3UploadConfig{
-        public string       directory_of_upload_files  { set; get;}
-        public  List<S3Gateway>    s3_gateways { set; get;}
-        public string       log_file_name { set; get;}
-        public string       bucket_name  { set; get;}
-        public string       server_name  { set; get;}
-        public string       server_ip_address  { set; get;}
-        public string       additional_server_info { set; get;}
+        public string       directoryOfUploadfiles  { set; get;}
+        public  List<S3Gateway>    s3Gateways { set; get;}
+        public string       logFileName { set; get;}
+        public string       bucketName  { set; get;}
+        public string       serverName  { set; get;}
+        public string       serverIPAddress  { set; get;}
+        public string       additionalServerInfo { set; get;}
 
-        public string      sqlite_database_name {set; get;}
-        public string      sqlite_database_file { set; get;}          
-        public string      access_id { set; get;}
-        public string      access_key { set; get;}
-        public string      profile_path { set; get;}
-        public string      profile_name {set; get;}
-        public bool        use_profile_file { set; get;}
-        public string      central_inventory_server { set; get;}
-        public string      central_inventory_user { set; get;}
-        public string      central_inventory_password { set; get;}
-        public string      central_inventory_database_name { set; get;}
-        public bool        run_on_schedule { set; get;}
-        public string      schedule_name { set; get;}
-        public bool        send_notification { set; get;}
-        public string      to_address  { set; get;}
-        public string      from_address { set; get;}
-        public string      bcc_address  { set; get;}
-        public string      cc_address  { set; get;}
-        public string      smtp_server  { set; get;}
-        public int         smtp_port   { set; get;}
+        public string      sqliteDatabaseName {set; get;}
+        public string      sqliteDatabaseFile { set; get;}   
+        public string      sqliteConfigFile {set; get;}       
+        public string      accessID { set; get;}
+        public string      accessKey { set; get;}
+        public string      profilePath { set; get;}
+        public string      profileName {set; get;}
+        public bool        useProfileFile { set; get;}
+        public string      centralInventoryServer { set; get;}
+        public string      centralInventoryUser { set; get;}
+        public string      centralInventoryPassword { set; get;}
+        public string      centralInventoryDatabaseName { set; get;}
+        public bool        runOnSchedule { set; get;}
+        public string      scheduleName { set; get;}
+        public bool        sendNotification { set; get;}
+        public string      toAddress  { set; get;}
+        public string      fromAddress { set; get;}
+        public string      bccAddress  { set; get;}
+        public string      ccAddress  { set; get;}
+        public string      smtpServer  { set; get;}
+        public string      smtpPort   { set; get;}
         public string      sender     { set; get;}
-        public string      sender_password  { set; get;}
-        public bool        is_ssl_enabled  { set; get;}
-        public string      alternate_row_colour{set; get;}
-        public string      email_font_family{set; get;}
-        public string      email_font_size{set; get;}
+        public string      senderPassword  { set; get;}
+        public bool        isSSLEnabled  { set; get;}
+        public string      alternateRowColour{set; get;}
+        public string      emailFontFamily{set; get;}
+        public string      emailFontSize{set; get;}
         public string      colour {set; get;}
-        public string      border_colour{set; get;}
-        public string      sqlite_config {set; get;}
-
-        public string      region {set; get;}
-        
+        public string      borderColour{set; get;}
+        public string      region {set; get;}      
 
     }
 }

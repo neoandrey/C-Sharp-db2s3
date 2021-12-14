@@ -7,7 +7,9 @@ namespace db2s3 {
      public string  address;
      public int  port;
      public string  protocol="https";
-
+     public S3Gateway(){
+           
+     }
      public S3Gateway(string address,  int port ){
             this.setAddress(address);
             this.setPort(port);

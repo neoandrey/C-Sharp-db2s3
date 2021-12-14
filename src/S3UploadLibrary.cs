@@ -63,7 +63,9 @@ namespace db2s3{
                public static  StringBuilder                 emailError                =   new StringBuilder();
                public static string                         sqliteDBName;
                public static string                         region;    
-               public static string                         profileName;                         
+               public static string                         profileName;  
+
+               public static string                         sqliteConfigFile;                       
             public  S3UploadLibrary(){ 
                     if (!File.Exists(logFile))  {
                           fs = File.CreateText(logFile);
@@ -79,86 +81,88 @@ namespace db2s3{
                           fs = File.AppendText(logFile);
                     } 
 				initS3UploadLibrary();
-					   Console.WriteLine("Reading configuration file: "+configFileName);
-					   if(!string.IsNullOrEmpty(cfgFile) ){
+					  
+                    if(!string.IsNullOrEmpty(cfgFile) ){
 
-						   string   nuCfgFile  = "";
-						   Console.WriteLine("Loading configurations in  configuration file: "+cfgFile);
-						   nuCfgFile           =  cfgFile.Contains("\\\\")? cfgFile:cfgFile.Replace("\\", "\\\\");
-                           
-                          try{
-                                    if(File.Exists(nuCfgFile)){
 
-                                        configFileName          = nuCfgFile;
-                                        initS3UploadLibrary();
+                         configFileName           =  cfgFile.Contains("\\\\")? cfgFile:cfgFile.Replace("\\", "\\\\");
+                                             
+                    } 
 
-                                    }
-                            }catch(Exception e){
+                    try{
+                              if(File.Exists(configFileName)){
 
-                                        Console.WriteLine("Error reading configuration file: "+e.Message+"\n"+e.ToString());
-                                        Console.WriteLine(e.StackTrace);
-                                        log("Error reading configuration file: "+e.Message+"\n"+e.ToString());
-                                        log(e.StackTrace);
 
-                            }
-					   }
-				 	
+                              initS3UploadLibrary();
+
+                              }
+                         }catch(Exception e){
+
+                              Console.WriteLine("Error reading configuration file "+cfgFile+": "+e.Message+"\n"+e.ToString());
+                              Console.WriteLine(e.StackTrace);
+                              log("Error reading configuration file "+cfgFile+": "+e.Message+"\n"+e.ToString());
+                              log(e.StackTrace);
+
+                         }
+                    	
 		       	         		
 				}
                public  void  initS3UploadLibrary(){
 
                     Console.WriteLine("Reading configuration file: "+configFileName);
+                   	log("===========================Started Database to StorageGRID Upload Session at "+DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")+"==============================");	 
                     
-                    readConfigFile(configFileName);
+                    readConfigFile();
 
-				log("===========================Started Database to StorageGRID Upload Session at "+DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")+"==============================");
-					
+		
 
                 }
-               public  static  void readConfigFile(string configFileName){
+               public  static  void readConfigFile(){
 
-                   writeToLog("Reading contents of configuration file: "+configFileName);
+                    writeToLog("Reading contents of configuration file: "+configFileName);
                     Console.WriteLine("Reading contents of configuration file: "+configFileName);
                     try{
-                         string  propertyString                  = File.ReadAllText(configFileName);
+                        string  propertyString                  = File.ReadAllText(configFileName);
                         uploadConfig                            = Newtonsoft.Json.JsonConvert.DeserializeObject<S3UploadConfig>(propertyString); 
-                        directoryOfUploadfiles                  = uploadConfig.directory_of_upload_files;
-                        s3Gateways	                             = uploadConfig.s3_gateways;
-                        logFile    	                         = uploadConfig.log_file_name;
-                        bucketName 	                         = uploadConfig.bucket_name;
-                        serverName	                         = uploadConfig.server_name  ;
-                        serverIPAddress 	                    = uploadConfig.server_ip_address  ;
-                        additionalServerInfo                    = uploadConfig.additional_server_info ;
-                        sqliteDBName                            = uploadConfig.sqlite_database_name;
-                        sqliteDatabaseFile                      = uploadConfig.sqlite_database_file ;   
-                        accessID 	                              = uploadConfig.access_id ;
-                        accessKey	                              = uploadConfig.access_key ;
-                        profilePath	                         = uploadConfig.profile_path ;
-                        useProfile	                             = uploadConfig.use_profile_file ;
-                        centralInventoryServer                  = uploadConfig.central_inventory_server ;
-                        centralInventoryUser                    = uploadConfig.central_inventory_user ;
-                        centralInventoryPassword                = uploadConfig.central_inventory_password ;
-                        centralInventoryDBName                  = uploadConfig.central_inventory_database_name ;
-                        runOnSchedule	 	                    = uploadConfig.run_on_schedule ;
-                        scheduleName	 	                    = uploadConfig.schedule_name ;
-                        sendNotification 	                    = uploadConfig.send_notification ;
-                        toAddress 	 	                    = uploadConfig.to_address  ;
-                        fromAddress		                    = uploadConfig.from_address ;
-                        bccAddress		                    = uploadConfig.bcc_address  ;
-                        ccAddress		                         = uploadConfig.cc_address  ;
-                        smtpServer	                              = uploadConfig.smtp_server  ;
-                        smtpPort		                         = uploadConfig.smtp_port   ;
+                        directoryOfUploadfiles                  = uploadConfig.directoryOfUploadfiles;
+                        s3Gateways	                             = uploadConfig.s3Gateways;
+                        logFile    	                        = uploadConfig.logFileName;
+                        bucketName 	                        = uploadConfig.bucketName;
+                        serverName	                             = uploadConfig.serverName  ;
+                        serverIPAddress 	                   = uploadConfig.serverIPAddress  ;
+                        additionalServerInfo                    = uploadConfig.additionalServerInfo ;
+                        sqliteDBName                            = uploadConfig.sqliteDatabaseName;
+                        sqliteDatabaseFile                      = uploadConfig.sqliteDatabaseFile ;   
+                        accessID 	                             = uploadConfig.accessID ;
+                        accessKey	                             = uploadConfig.accessKey ;
+                        profilePath	                         = uploadConfig.profilePath ;
+                        useProfile	                             = uploadConfig.useProfileFile ;
+                         profileName                              = uploadConfig.profileName;
+                        centralInventoryServer                  = uploadConfig.centralInventoryServer ;
+                        centralInventoryUser                    = uploadConfig.centralInventoryUser ;
+                        centralInventoryPassword                = uploadConfig.centralInventoryPassword ;
+                        centralInventoryDBName                  = uploadConfig.centralInventoryDatabaseName ;
+                        runOnSchedule	 	                    = uploadConfig.runOnSchedule;
+                        scheduleName	 	                    = uploadConfig.scheduleName ;
+                        sendNotification 	                    = uploadConfig.sendNotification ;
+                        toAddress 	 	                    = uploadConfig.toAddress  ;
+                        fromAddress		                    = uploadConfig.fromAddress ;
+                        bccAddress		                    = uploadConfig.bccAddress  ;
+                        ccAddress		                         = uploadConfig.ccAddress  ;
+                        smtpServer	                              = uploadConfig.smtpServer  ;
+                        smtpPort		                         = uploadConfig.smtpPort != null && uploadConfig.smtpPort.Length>0 ?Convert.ToInt32(uploadConfig.smtpPort):0  ;
                         sender			                    = uploadConfig.sender     ;
-                        senderPassword		                    = uploadConfig.sender_password  ;
-                        isSSLEnabled		                    = uploadConfig.is_ssl_enabled  ;
-                        alternateRowColour	                    = uploadConfig.alternate_row_colour;
-                        emailFontFamily		                    = uploadConfig.email_font_family;
-                        emailFontSize		                    = uploadConfig.email_font_size;
+                        senderPassword		                    = uploadConfig.senderPassword  ;
+                        isSSLEnabled		                    = uploadConfig.isSSLEnabled  ;
+                        alternateRowColour	                    = uploadConfig.alternateRowColour;
+                        emailFontFamily		                    = uploadConfig.emailFontFamily;
+                        emailFontSize		                    = uploadConfig.emailFontSize;
                         colour			                    = uploadConfig.colour;
-                        borderColour		                    = uploadConfig.border_colour; 
+                        borderColour		                    = uploadConfig.borderColour; 
                         region                                   = uploadConfig.region;
-                        sqliteHelper                             = new SQLiter(sqliteDBName, sqliteDatabaseFile);
-                        profileName                              = uploadConfig.profile_name;
+                        sqliteConfigFile                         = uploadConfig.sqliteConfigFile;
+                        sqliteHelper                             = new SQLiter(sqliteDBName, sqliteConfigFile);  
+                                    
                    
                     }catch(Exception e){
 
@@ -166,6 +170,9 @@ namespace db2s3{
                     Console.WriteLine(e.StackTrace);
 
                     }
+                    writeToLog("Configuration successfully loaded. ");
+                    Console.WriteLine("Configuration successfully loaded.");
+                    
                }
 
                public static void  writeToLog(string logMessage){
@@ -298,10 +305,6 @@ namespace db2s3{
                  return selectTable;
 
         } 
-
-
-
-       
 
           public static string getColumnValueMapForWhere(Dictionary<string,object> rawMap, string comparison){
 

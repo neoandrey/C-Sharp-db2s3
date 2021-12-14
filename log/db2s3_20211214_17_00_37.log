@@ -1,0 +1,4 @@
+===========================Started Database to StorageGRID Upload Session at 2021-12-14 17:00:37==============================
+2021-12-14 17:00:37=>Reading contents of configuration file: C:\Users\Mobolaji.Aina\Documents\C\c_sharp\db2s3\bin\..\conf\db2s3.json
+2021-12-14 17:00:37=>Reading contents of SQLite configuration file: C:\Users\Mobolaji.Aina\Documents\C\c_sharp\db2s3\bin\..\conf\sqliter.json
+2021-12-14 17:00:37=>SQLite database db2s3 successfully initialised 

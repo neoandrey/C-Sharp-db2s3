@@ -1,5 +1,4 @@
-
- using System; 
+using System; 
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -131,7 +130,7 @@ public class TableIndex{
 
         
         public  void readConfigFile(){
-            string configFileName = this.getConfigFile();
+            string configFileName = this.getConfigFile().Contains(":")?this.getConfigFile():AppDomain.CurrentDomain.BaseDirectory+this.getConfigFile();
             S3UploadLibrary.writeToLog("Reading contents of SQLite configuration file: "+configFileName);
             Console.WriteLine("Reading contents of configuration SQLite file: "+configFileName);
             try{
@@ -140,8 +139,10 @@ public class TableIndex{
 
             }catch(Exception e){
 
-            Console.WriteLine("Error reading configuration file: "+e.Message);
-            Console.WriteLine(e.StackTrace);
+                              Console.WriteLine("Error reading sqlite configuration file "+configFileName+": "+e.Message+"\n"+e.ToString());
+                              Console.WriteLine(e.StackTrace);
+                              S3UploadLibrary.writeToLog("Error reading sqlite configuration file "+configFileName+": "+e.Message+"\n"+e.ToString());
+                              S3UploadLibrary.writeToLog(e.StackTrace);
  
             }
         }
@@ -170,10 +171,10 @@ public class TableIndex{
                 
                     } else {
 
-                        Console.WriteLine(String.Format("SQLite database {0} successfully initialised: ", this.getDatabaseName()));
+                        Console.WriteLine(String.Format("SQLite database {0} successfully initialised ", this.getDatabaseName()));
+                        S3UploadLibrary.writeToLog(String.Format("SQLite database {0} successfully initialised ", this.getDatabaseName()));
                     }
                     }
-
 
                public string getDBPath(){
                     return this.sqliteDBPath;
