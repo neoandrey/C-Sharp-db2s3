@@ -282,9 +282,9 @@ namespace db2s3{
           public static long getLastID(string tableName, string columnName, string  columnAlias){
                long lastUploadSessionID  = 0;
                string  rawSelect        =  sqliteHelper.getQueryTemplate("max");
-               string fetchMaxUploadSessionScript = removeWhereClause(rawSelect.Replace("column_name_placeholder",columnName).Replace("table_name_placeholder",tableName).Replace("max_column_name_placeholder",columnAlias).Trim());
+               string fetchMaxUploadSessionScript = removeWhereClause(rawSelect.Replace("table_name_placeholder",tableName).Replace("max_column_name_placeholder",columnAlias).Replace("column_name_placeholder",columnName).Trim());
                DataTable sessionUploadTable = sqliteHelper.getDataFromScript(fetchMaxUploadSessionScript);
-               lastUploadSessionID      =  long.Parse(sessionUploadTable.Rows[0][columnAlias].ToString());
+               lastUploadSessionID      =  sessionUploadTable.Rows[0].Field<Int64>(columnAlias);
                return lastUploadSessionID;     
           }
 
@@ -320,8 +320,6 @@ namespace db2s3{
                                   object  value    = parameter.Value;
                                  if (value.GetType().ToString().ToLower() =="system.int16"|| value.GetType().ToString().ToLower()== "system.int32"  || value.GetType().ToString().ToLower()== "system.int64"){
                                       valueStr = String.Format(intFormat,  field,comparison, value);
-                                 }else if(value.GetType().ToString().ToLower() == "system.string"){
-                                      valueStr = String.Format(stringFormat,  field,comparison, value);
                                  }else if(value.GetType().ToString().ToLower()== "system.collections.generic.list`1[system.object]"){
                                        StringBuilder listItems = new StringBuilder();
                                        listItems.Append(field);
@@ -340,6 +338,8 @@ namespace db2s3{
                                        listItems.Append(")");
                                        valueStr = listItems.ToString();
                                       
+                                 }else {
+                                      valueStr = String.Format(stringFormat,  field,comparison, value);
                                  }
 						
 							whereClause.Append(valueStr).Append(',');
@@ -361,7 +361,7 @@ namespace db2s3{
                }
                
                DataTable countTable = sqliteHelper.getDataFromScript(fetchMaxUploadSessionScript);
-               uploadCount      =  int.Parse(countTable.Rows[0]["columnAlias"].ToString());
+               uploadCount          =  countTable.Rows[0].Field<Int32>(columnAlias);
                return uploadCount;     
            }
 
@@ -402,7 +402,7 @@ namespace db2s3{
                       string valueStr = "";
                        if (value.GetType().ToString().ToLower() =="system.int16"|| value.GetType().ToString().ToLower()== "system.int32"  || value.GetType().ToString().ToLower()== "system.int64"){
                                       valueStr = String.Format(intFormat, value);
-                         }else if(value.GetType().ToString().ToLower()== "system.string"){
+                         }else {
                               valueStr = String.Format(stringFormat, value);
                          }
                                  fields.Append(field).Append(",");

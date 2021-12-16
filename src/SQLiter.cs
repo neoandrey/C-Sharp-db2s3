@@ -159,7 +159,6 @@ public class TableIndex{
                                 if(!checkIfTableExists(tableName)){
                                     createTable(tableInfo.createScript);
                                     foreach(var indexInfo  in  tableInfo.indexes){
-
                                     createIndexOnColumn(tableName, String.Join( ",", indexInfo.columns),indexInfo.indexName,        indexInfo.isUnique);
 
                                  }
@@ -263,12 +262,11 @@ public class TableIndex{
                            Console.WriteLine("Running the  following on inventory database: "+sqlScript);
                             using  (SQLiteConnection  liteConnect = new SQLiteConnection(liteConnectionString)){
                                     
-                                   S3UploadLibrary.writeToLog("Running: "+sqlScript);
                                     liteConnect.Open();
                                     SQLiteCommand command = new SQLiteCommand(sqlScript, liteConnect);
                                     command.CommandTimeout = -1;
                                     command.ExecuteNonQuery();
-
+                                    Console.WriteLine("Query complete");
                                     S3UploadLibrary.writeToLog("Query complete");
                                     command.Dispose();
                                     return true;
@@ -339,13 +337,15 @@ public class TableIndex{
                     SQLiteDataReader reader = cmd.ExecuteReader();
                     dt.Load(reader);
                     cmd.Dispose();
+                    Console.WriteLine("Script executed successfully.");
+                    S3UploadLibrary.writeToLog("Script executed successfully");
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine("Error running script: "+theScript+"=>"+e.Message);
                 Console.WriteLine(e.StackTrace);
-               S3UploadLibrary.writeToLog(e.Message);
+               S3UploadLibrary.writeToLog("Error running script: "+theScript+"=>"+e.Message);
                S3UploadLibrary.writeToLog(e.StackTrace);
             }
             return dt;

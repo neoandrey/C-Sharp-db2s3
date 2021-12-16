@@ -28,6 +28,7 @@ namespace db2s3{
         //public  List<S3UploadSession> uploadSession;
         public  List<S3Gateway> s3Gateways;
         public S3UploadSession uploadSession;
+        public  List<S3Gateway> attemptedGateways   =  new List<S3Gateway>();
 
 
 
@@ -46,8 +47,16 @@ namespace db2s3{
 
         }
         public S3Uploader(string configFilePath){
-            new S3UploadLibrary(configFilePath);
-            this.runS3Upload();
+              try{
+                new S3UploadLibrary(configFilePath);
+                this.runS3Upload();
+             }catch(Exception e){
+                Console.WriteLine("An error has occurred");
+                Console.WriteLine("Error: "+e.StackTrace);
+                S3UploadLibrary.writeToLog("An error has occurred");
+                S3UploadLibrary.writeToLog("Error: "+e.StackTrace);
+
+             }
         }
 
         public void setUploadDirectory(string folder){
@@ -66,7 +75,8 @@ namespace db2s3{
         }
   
         public  void runS3Upload(){
-            
+            S3UploadLibrary.writeToLog(String.Format("Scanning path {0} for files to upload...",S3UploadLibrary.directoryOfUploadfiles));
+            Console.WriteLine(String.Format("Scanning path {0} for files to upload...",S3UploadLibrary.directoryOfUploadfiles));
             this.setUploadDirectory(S3UploadLibrary.directoryOfUploadfiles);
             this.setS3Gateways(S3UploadLibrary.s3Gateways);
             List<S3UploadEntity> allS3EntitiesInPath  = this.getUploadEntitiesFromPath(this.getUploadDirectory(), false);
@@ -75,15 +85,18 @@ namespace db2s3{
             this.setUploadSession(createUploadSession());
             List<S3UploadItem> itemsUploaded =  startEntityUploadSession(entitiesToBeUploaded);
             itemsUploaded.ForEach(x=>x.save());
+            this.getUploadSession().setGateway(String.Join(",", attemptedGateways.Select(x => x.getUrl()).ToArray()));
             this.getUploadSession().setUploadCount(itemsUploaded.Count);
             this.getUploadSession().setEndTime(DateTime.Now);
             this.getUploadSession().setStatus(S3UploadLibrary.SUCCESSFUL);
+            Console.WriteLine(this.getUploadSession().getStartTime().ToString());
+            Console.WriteLine(this.getUploadSession().getEndTime().ToString());
             this.getUploadSession().save();
         }
  
         public S3UploadSession createUploadSession(){
               S3UploadSession session   =  new S3UploadSession();
-              session.setSessionID(session.getLastS3UploadSessionID());
+              session.setSessionID(session.getLastS3UploadSessionID()+1);
               session.setServerName(S3UploadLibrary.serverName);
               session.setServerIP(S3UploadLibrary.serverIPAddress);
               session.setBucketName(S3UploadLibrary.bucketName); 
@@ -97,26 +110,36 @@ namespace db2s3{
         public bool initS3Client(string accessKey, string secretKey, string gateway){
               bool isConnected = false;
               try{
-                  s3Config.ServiceURL  = gateway;
-                  this.getUploadSession().setGateway(gateway);
-                  S3UploadLibrary.writeToLog("Attempting to connect to gateway at: "+gateway);
-                  Console.WriteLine("Attempting to connect to gateway at: "+gateway);
-                  if(S3UploadLibrary.useProfile && File.Exists(S3UploadLibrary.profilePath)){
-                    CredentialProfileStoreChain chain = new CredentialProfileStoreChain(S3UploadLibrary.profilePath);
-                    AWSCredentials  awsCredentials;
-                    if (chain.TryGetAWSCredentials(S3UploadLibrary.profileName, out awsCredentials))
-                    {
-                          s3Client =  new AmazonS3Client(awsCredentials); //, basicProfile.Region)
-                          isConnected = true;
-                           S3UploadLibrary.writeToLog("Successfully connected to gateway at: "+gateway);
-                           Console.WriteLine("Successfully connected to gateway at: "+gateway);
-                    }
-                  } else{
+                    s3Config.ServiceURL  = gateway;
+                    s3Config.Timeout = TimeSpan.FromSeconds(1);
+                    //s3Config.ReadWriteTimeout = TimeSpan.FromSeconds(10);
+                    //s3Config. RetryMode = RequestRetryMode.Standard;
+                    //s3Config.MaxErrorRetry = 3;
+  
+                    this.getUploadSession().setGateway(gateway);
+                    S3UploadLibrary.writeToLog("Attempting to connect to gateway at: "+gateway);
+                    Console.WriteLine("Attempting to connect to gateway at: "+gateway);
+                    if(S3UploadLibrary.useProfile && File.Exists(S3UploadLibrary.profilePath)){
+                        CredentialProfileStoreChain chain = new CredentialProfileStoreChain(S3UploadLibrary.profilePath);
+                        AWSCredentials  awsCredentials;
+                        if (chain.TryGetAWSCredentials(S3UploadLibrary.profileName, out awsCredentials))
+                        {
+                            this.s3Client =  new AmazonS3Client(awsCredentials); //, basicProfile.Region)
+                           
+                        }
+                    } else{
 
-                      s3Client = new AmazonS3Client(accessKey,secretKey,s3Config);
-                      isConnected = true;
-                  }
-                  
+                         this.s3Client = new AmazonS3Client(accessKey,secretKey,s3Config);
+          
+                    } 
+                    
+                   ListBucketsResponse bucketList =   this.s3Client.ListBuckets();
+                    if(bucketList!=null){ 
+                        isConnected = true;
+                    }
+                    S3UploadLibrary.writeToLog("Successfully connected to gateway at: "+gateway);
+                    Console.WriteLine("Successfully connected to gateway at: "+gateway);
+
                   
               }catch(Exception e ){
 
@@ -136,6 +159,7 @@ namespace db2s3{
               string accessKey = S3UploadLibrary.accessID;
               string secretKey = S3UploadLibrary.accessKey;
               foreach(S3Gateway gateway in s3Gateways){
+                   attemptedGateways.Add(gateway);
                    if (initS3Client(accessKey, secretKey, gateway.getUrl())){
                         break;
                    }
@@ -170,6 +194,8 @@ namespace db2s3{
                              BucketName = S3UploadLibrary.bucketName
                             ,Key = entity.getName()
                             ,FilePath = entity.getFullName()
+                            ,Timeout               = TimeSpan.FromSeconds(-1)
+                            ,ReadWriteTimeout      = TimeSpan.FromSeconds(300000)  
                           
                         }; 
                         DateTime startTime = DateTime.Now;                 
@@ -320,10 +346,10 @@ namespace db2s3{
             }	
                 if(string.IsNullOrEmpty(configFile)){
                     
-                    new  S3UploadLibrary();
+                    new  S3Uploader();
                     
                 }else {					
-                    new  S3UploadLibrary(configFile);
+                    new  S3Uploader(configFile);
                 }
             }catch(Exception e) {
                 

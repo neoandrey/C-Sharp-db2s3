@@ -1,0 +1,99 @@
+===========================Started Database to StorageGRID Upload Session at 2021-12-16 01:16:18==============================
+2021-12-16 01:16:18=>Reading contents of configuration file: C:\Users\Mobolaji.Aina\Documents\C\c_sharp\db2s3\bin\..\conf\db2s3.json
+2021-12-16 01:16:19=>Reading contents of SQLite configuration file: C:\Users\Mobolaji.Aina\Documents\C\c_sharp\db2s3\bin\..\conf\sqliter.json
+2021-12-16 01:16:19=>SQLite database db2s3 successfully initialised 
+2021-12-16 01:16:19=>Configuration successfully loaded. 
+2021-12-16 01:16:19=>Scanning path C:\staging\0 for files to upload...
+2021-12-16 01:16:19=>Executing  SQLite script: SELECT * FROM upload_items   
+2021-12-16 01:16:19=>Script executed successfully
+2021-12-16 01:16:19=>Executing  SQLite script: SELECT IFNULL(MAX(session_id), 0)  AS max_session FROM  upload_sessions  
+2021-12-16 01:16:19=>Script executed successfully
+2021-12-16 01:16:19=>Attempting to connect to gateway at: https://172.31.3.120:8082/
+2021-12-16 01:19:24=>Unable to connect to S3 via gateway: https://172.31.3.120:8082/
+2021-12-16 01:19:24=>Error:    at Amazon.Runtime.Internal.WebExceptionHandler.HandleException(IExecutionContext executionContext, WebException exception)
+   at Amazon.Runtime.Internal.ErrorHandler.ProcessException(IExecutionContext executionContext, Exception exception)
+   at Amazon.Runtime.Internal.ErrorHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.EndpointDiscoveryHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.RetryHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.S3.Internal.AmazonS3ExceptionHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.ErrorCallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.MetricsHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.RuntimePipeline.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.AmazonServiceClient.Invoke[TResponse](AmazonWebServiceRequest request, InvokeOptionsBase options)
+   at db2s3.S3Uploader.initS3Client(String accessKey, String secretKey, String gateway)
+2021-12-16 01:19:24=>Attempting to connect to gateway at: https://172.31.3.121:8082/
+2021-12-16 01:22:30=>Unable to connect to S3 via gateway: https://172.31.3.121:8082/
+2021-12-16 01:22:30=>Error:    at Amazon.Runtime.Internal.WebExceptionHandler.HandleException(IExecutionContext executionContext, WebException exception)
+   at Amazon.Runtime.Internal.ErrorHandler.ProcessException(IExecutionContext executionContext, Exception exception)
+   at Amazon.Runtime.Internal.ErrorHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.EndpointDiscoveryHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.RetryHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.S3.Internal.AmazonS3ExceptionHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.ErrorCallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.MetricsHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.RuntimePipeline.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.AmazonServiceClient.Invoke[TResponse](AmazonWebServiceRequest request, InvokeOptionsBase options)
+   at db2s3.S3Uploader.initS3Client(String accessKey, String secretKey, String gateway)
+2021-12-16 01:22:30=>Attempting to connect to gateway at: https://172.19.45.120:8082/
+2021-12-16 01:25:35=>Unable to connect to S3 via gateway: https://172.19.45.120:8082/
+2021-12-16 01:25:35=>Error:    at Amazon.Runtime.Internal.WebExceptionHandler.HandleException(IExecutionContext executionContext, WebException exception)
+   at Amazon.Runtime.Internal.ErrorHandler.ProcessException(IExecutionContext executionContext, Exception exception)
+   at Amazon.Runtime.Internal.ErrorHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.EndpointDiscoveryHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.RetryHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.S3.Internal.AmazonS3ExceptionHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.ErrorCallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.MetricsHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.RuntimePipeline.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.AmazonServiceClient.Invoke[TResponse](AmazonWebServiceRequest request, InvokeOptionsBase options)
+   at db2s3.S3Uploader.initS3Client(String accessKey, String secretKey, String gateway)
+2021-12-16 01:25:35=>Attempting to connect to gateway at: https://172.19.45.121:8082/
+2021-12-16 01:28:39=>Unable to connect to S3 via gateway: https://172.19.45.121:8082/
+2021-12-16 01:28:39=>Error:    at Amazon.Runtime.Internal.WebExceptionHandler.HandleException(IExecutionContext executionContext, WebException exception)
+   at Amazon.Runtime.Internal.ErrorHandler.ProcessException(IExecutionContext executionContext, Exception exception)
+   at Amazon.Runtime.Internal.ErrorHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.EndpointDiscoveryHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.RetryHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.S3.Internal.AmazonS3ExceptionHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.ErrorCallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.MetricsHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.RuntimePipeline.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.AmazonServiceClient.Invoke[TResponse](AmazonWebServiceRequest request, InvokeOptionsBase options)
+   at db2s3.S3Uploader.initS3Client(String accessKey, String secretKey, String gateway)
+2021-12-16 01:31:45=>Error uploading file: 
+2021-12-16 01:31:45=>Error:    at Amazon.Runtime.Internal.WebExceptionHandler.HandleException(IExecutionContext executionContext, WebException exception)
+   at Amazon.Runtime.Internal.ErrorHandler.ProcessException(IExecutionContext executionContext, Exception exception)
+   at Amazon.Runtime.Internal.ErrorHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.EndpointDiscoveryHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.RetryHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.CallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.S3.Internal.AmazonS3ExceptionHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.ErrorCallbackHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.MetricsHandler.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.Internal.RuntimePipeline.InvokeSync(IExecutionContext executionContext)
+   at Amazon.Runtime.AmazonServiceClient.Invoke[TResponse](AmazonWebServiceRequest request, InvokeOptionsBase options)
+   at db2s3.S3Uploader.startEntityUploadSession(List`1 entities)
+2021-12-16 01:31:45=>Running the  following on inventory database: REPLACE INTO upload_sessions (server_id,server_name,server_ip,bucket_name,upload_path,upload_count,start_time,end_time,status,gateway) VALUES (1,'jump31','172.25.30.31','db_backup_bucket','C:\staging\0',0,,,1,'https://172.19.45.121:8082/')
+2021-12-16 01:31:45=>SQL logic error
+near ",": syntax error
+2021-12-16 01:31:45=>   at System.Data.SQLite.SQLite3.Prepare(SQLiteConnection cnn, String strSql, SQLiteStatement previous, UInt32 timeoutMS, String& strRemain)
+   at System.Data.SQLite.SQLiteCommand.BuildNextCommand()
+   at System.Data.SQLite.SQLiteDataReader.NextResult()
+   at System.Data.SQLite.SQLiteDataReader..ctor(SQLiteCommand cmd, CommandBehavior behave)
+   at System.Data.SQLite.SQLiteCommand.ExecuteReader(CommandBehavior behavior)
+   at System.Data.SQLite.SQLiteCommand.ExecuteNonQuery(CommandBehavior behavior)
+   at db2s3.SQLiter.executeScript(String sqlScript)

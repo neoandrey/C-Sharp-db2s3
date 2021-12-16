@@ -186,12 +186,12 @@ namespace db2s3{
           public Dictionary<string,object> getDict(){
 
                return  new Dictionary<string,object>(){
-                              {"server_id" , this.sessionID},
+                              {"session_id" , this.sessionID},
                                {"server_name" , this.serverName},
                                {"server_ip"   , this.serverIP},
                                {"bucket_name"  , this.bucketName},
                                {"upload_path"  , this.uploadPath},
-                               {"upload_count" , this.uploadPath},
+                               {"upload_count" , this.uploadCount},
                               { "start_time"   , this.startTime},
                               { "end_time"     , this.endTime},
                               { "status"       , this.status},
