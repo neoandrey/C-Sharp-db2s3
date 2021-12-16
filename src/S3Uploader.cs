@@ -11,6 +11,8 @@ using System.Data;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
 using System.Data.SQLite;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 // To interact with Amazon S3.
 using Amazon.S3;
@@ -52,10 +54,9 @@ namespace db2s3{
                 this.runS3Upload();
              }catch(Exception e){
                 Console.WriteLine("An error has occurred");
-                Console.WriteLine("Error: "+e.StackTrace);
                 S3UploadLibrary.writeToLog("An error has occurred");
-                S3UploadLibrary.writeToLog("Error: "+e.StackTrace);
-
+                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
              }
         }
 
@@ -85,7 +86,7 @@ namespace db2s3{
             this.setUploadSession(createUploadSession());
             List<S3UploadItem> itemsUploaded =  startEntityUploadSession(entitiesToBeUploaded);
             itemsUploaded.ForEach(x=>x.save());
-            this.getUploadSession().setGateway(String.Join(",", attemptedGateways.Select(x => x.getUrl()).ToArray()));
+           // this.getUploadSession().setGateway(String.Join(",", attemptedGateways.Select(x => x.getUrl()).ToArray()));
             this.getUploadSession().setUploadCount(itemsUploaded.Count);
             this.getUploadSession().setEndTime(DateTime.Now);
             this.getUploadSession().setStatus(S3UploadLibrary.SUCCESSFUL);
@@ -107,21 +108,36 @@ namespace db2s3{
 
         }
 
+        public void checkCertificate(){
+                                System.Net.ServicePointManager.ServerCertificateValidationCallback +=
+                    delegate (
+                        object sender,
+                        X509Certificate certificate,
+                        X509Chain chain,
+                        SslPolicyErrors sslPolicyErrors)
+                    {
+                        return true;
+                    };
+        }
+
         public bool initS3Client(string accessKey, string secretKey, string gateway){
               bool isConnected = false;
               try{
                     s3Config.ServiceURL  = gateway;
                     s3Config.Timeout = TimeSpan.FromSeconds(1);
+                    s3Config.ForcePathStyle = true;
                     //s3Config.ReadWriteTimeout = TimeSpan.FromSeconds(10);
                     //s3Config. RetryMode = RequestRetryMode.Standard;
                     //s3Config.MaxErrorRetry = 3;
-  
+                    BasicAWSCredentials basicCredentials = new BasicAWSCredentials(accessKey, secretKey);
+                    this.checkCertificate();
                     this.getUploadSession().setGateway(gateway);
                     S3UploadLibrary.writeToLog("Attempting to connect to gateway at: "+gateway);
                     Console.WriteLine("Attempting to connect to gateway at: "+gateway);
                     if(S3UploadLibrary.useProfile && File.Exists(S3UploadLibrary.profilePath)){
                         CredentialProfileStoreChain chain = new CredentialProfileStoreChain(S3UploadLibrary.profilePath);
                         AWSCredentials  awsCredentials;
+
                         if (chain.TryGetAWSCredentials(S3UploadLibrary.profileName, out awsCredentials))
                         {
                             this.s3Client =  new AmazonS3Client(awsCredentials); //, basicProfile.Region)
@@ -129,24 +145,26 @@ namespace db2s3{
                         }
                     } else{
 
-                         this.s3Client = new AmazonS3Client(accessKey,secretKey,s3Config);
+                         this.s3Client = new AmazonS3Client(basicCredentials,s3Config);
           
                     } 
-                    
-                   ListBucketsResponse bucketList =   this.s3Client.ListBuckets();
-                    if(bucketList!=null){ 
-                        isConnected = true;
+
+                    ListBucketsResponse buckets = s3Client.ListBuckets();
+                    if(buckets != null){
+                            isConnected = true;
                     }
+                    
                     S3UploadLibrary.writeToLog("Successfully connected to gateway at: "+gateway);
                     Console.WriteLine("Successfully connected to gateway at: "+gateway);
 
-                  
+            
               }catch(Exception e ){
 
-                Console.WriteLine("Unable to connect to S3 via gateway: "+gateway);
-                Console.WriteLine("Error: "+e.StackTrace);
+                   Console.WriteLine("Unable to connect to S3 via gateway: "+gateway);
+                  Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+
                 S3UploadLibrary.writeToLog("Unable to connect to S3 via gateway: "+gateway);
-                S3UploadLibrary.writeToLog("Error: "+e.StackTrace);
+                S3UploadLibrary.writeToLog( S3UploadLibrary.getErrorMessage(e));
 
               } 
                return isConnected;
@@ -165,7 +183,9 @@ namespace db2s3{
                    }
               }
               if(this.s3Client!= null){
-                  string currentFile = "";
+                  Console.WriteLine("Starting bucket upload");
+                  S3UploadLibrary.writeToLog("Starting bucket upload");
+                  string currentFile = "None";
                   try{
                     
                     ListBucketsResponse response = this.s3Client.ListBuckets();  
@@ -180,9 +200,14 @@ namespace db2s3{
 
                         Console.WriteLine(String.Format("Bucket {0} not found. Creating bucket now...", S3UploadLibrary.bucketName));
                         S3UploadLibrary.writeToLog(String.Format("Bucket {0} not found. Creating bucket now...", S3UploadLibrary.bucketName));
-                        this.s3Client.PutBucket(new PutBucketRequest(){BucketName = S3UploadLibrary.bucketName});  
+                        Console.WriteLine("Bucket Name: "+S3UploadLibrary.bucketName);
+                        Console.WriteLine("Bucket Region: "+S3UploadLibrary.region);
+                        PutBucketResponse buckResponse = this.s3Client.PutBucket(new PutBucketRequest(){BucketName = S3UploadLibrary.bucketName, BucketRegion  = S3UploadLibrary.region }); 
+        
+                        Console.WriteLine("Bucket Response"+buckResponse.ToString());
                     }
                     long lastUploadedItemID  = S3UploadLibrary.getLastID( "upload_items", "item_id", "max_item_id");
+                    this.checkCertificate();
                     foreach( S3UploadEntity entity in entities){
                         
                         Console.WriteLine(String.Format("Uploading file {0} to bucket {1}...",entity.getName(),S3UploadLibrary.bucketName));
@@ -194,8 +219,8 @@ namespace db2s3{
                              BucketName = S3UploadLibrary.bucketName
                             ,Key = entity.getName()
                             ,FilePath = entity.getFullName()
-                            ,Timeout               = TimeSpan.FromSeconds(-1)
-                            ,ReadWriteTimeout      = TimeSpan.FromSeconds(300000)  
+                            ,Timeout               = TimeSpan.FromSeconds(100)
+                            ,ReadWriteTimeout      = TimeSpan.FromSeconds(100)  
                           
                         }; 
                         DateTime startTime = DateTime.Now;                 
@@ -231,9 +256,9 @@ namespace db2s3{
 
                 }catch(Exception e){
                    Console.WriteLine("Error uploading file: "+currentFile);
-                   Console.WriteLine("Error: "+e.StackTrace);
                    S3UploadLibrary.writeToLog("Error uploading file: "+currentFile);
-                   S3UploadLibrary.writeToLog("Error: "+e.StackTrace);
+                  Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                  S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
 
                 }
 

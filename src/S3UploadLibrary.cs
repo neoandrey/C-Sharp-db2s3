@@ -127,7 +127,7 @@ namespace db2s3{
                         directoryOfUploadfiles                  = uploadConfig.directoryOfUploadfiles;
                         s3Gateways	                             = uploadConfig.s3Gateways;
                         logFile    	                        = uploadConfig.logFileName;
-                        bucketName 	                        = uploadConfig.bucketName;
+                        bucketName 	                        = uploadConfig.bucketName !=null ? uploadConfig.bucketName.Replace("_","-") :"db2s3";
                         serverName	                             = uploadConfig.serverName  ;
                         serverIPAddress 	                   = uploadConfig.serverIPAddress  ;
                         additionalServerInfo                    = uploadConfig.additionalServerInfo ;
@@ -305,6 +305,16 @@ namespace db2s3{
                  return selectTable;
 
         } 
+
+        public static string getErrorMessage(Exception e){
+
+             StringBuilder errorBuilder   =  new StringBuilder();
+                  errorBuilder.Append("\nError Message: "+e.Message+"\n");
+                  errorBuilder.Append("\nError Source: "+e.Source+"\n");
+                  errorBuilder.Append("\nError Details: "+e.ToString()+"\n");
+
+               return errorBuilder.ToString();
+        }
 
           public static string getColumnValueMapForWhere(Dictionary<string,object> rawMap, string comparison){
 

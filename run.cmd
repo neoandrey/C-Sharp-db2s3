@@ -7,9 +7,9 @@
    echo "Please type proxy URL:"
       set /p proxy_url=    
  )
-echo  %proxy_url%>%cd%\proxy.txt
- echo "setting proxy as:%proxy_url%"
- SET  HTTP_PROXY=%proxy_url%
- SET  HTTPS_PROXY=%proxy_url%
+rem echo  %proxy_url%>%cd%\proxy.txt
+rem echo "setting proxy as:%proxy_url%"
+rem SET  HTTP_PROXY=%proxy_url%
+rem SET  HTTPS_PROXY=%proxy_url%
 powershell  -File  %cd%\run.ps1
 pause

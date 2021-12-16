@@ -1,15 +1,15 @@
 {
     "directoryOfUploadfiles": "C:\\staging\\0"
     ,"logFileName": "db2s3_log"
-    ,"bucketName": "db_backup_bucket"
+    ,"bucketName": "db-backup-bucket"
     ,"serverName":  "jump31"
     ,"serverIPAddress": "172.25.30.31"
     ,"additionalServerInfo":""
     ,"sqliteDatabaseName" : "db2s3" 
     ,"sqliteDatabaseFile" : "..\\db\\db2s3.sqlite" 
     ,"sqliteConfigFile" : "..\\conf\\sqliter.json" 
-    ,"accessID": ""
-    ,"accessKey": ""
+    ,"accessID": "RFIFQUZALSLGVVAFBLRD"
+    ,"accessKey": "sJ60uXXb/ZPRmPXjIEFIYOdYa+XRReVzulMmcqw8"
     ,"profilePath": ""
     ,"profileName":""
     ,"useProfileFile" : false
