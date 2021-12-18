@@ -37,9 +37,8 @@ namespace db2s3 {
 
                 Console.WriteLine("Error reading configuration file: "+e.Message+"\n"+e.ToString());
                 Console.WriteLine(e.StackTrace);
-                //writeToLog("Error reading configuration file: "+e.Message+"\n"+e.ToString());
-                //writeToLog(e.StackTrace);
-
+                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
             }
 
 

@@ -139,10 +139,10 @@ public class TableIndex{
 
             }catch(Exception e){
 
-                              Console.WriteLine("Error reading sqlite configuration file "+configFileName+": "+e.Message+"\n"+e.ToString());
-                              Console.WriteLine(e.StackTrace);
-                              S3UploadLibrary.writeToLog("Error reading sqlite configuration file "+configFileName+": "+e.Message+"\n"+e.ToString());
-                              S3UploadLibrary.writeToLog(e.StackTrace);
+                Console.WriteLine("Error reading sqlite configuration file "+configFileName+": "+e.Message+"\n"+e.ToString());                            
+                S3UploadLibrary.writeToLog("Error reading sqlite configuration file "+configFileName+": "+e.Message+"\n"+e.ToString());
+                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
  
             }
         }
@@ -159,7 +159,8 @@ public class TableIndex{
                                 if(!checkIfTableExists(tableName)){
                                     createTable(tableInfo.createScript);
                                     foreach(var indexInfo  in  tableInfo.indexes){
-                                    createIndexOnColumn(tableName, String.Join( ",", indexInfo.columns),indexInfo.indexName,        indexInfo.isUnique);
+                                        string columns = indexInfo.columns.GetType().ToString() =="System.Collections.ArrayList"?String.Join( ",", indexInfo.columns.ToArray()):indexInfo.columns.ToString();
+                                        createIndexOnColumn(tableName, columns ,indexInfo.indexName,        indexInfo.isUnique);
 
                                  }
 
@@ -192,12 +193,14 @@ public class TableIndex{
                         try{
 
                                using  (SQLiteConnection  liteConnect = new SQLiteConnection(liteConnectionString)){
+                                    Console.WriteLine("liteConnectionString: "+liteConnectionString);
                                     liteConnect.Open();
-                                    string sql = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='"+tableName+"';";
+                                    string sql = "SELECT  IFNULL(1,0) FROM sqlite_master WHERE type='table' AND name='"+tableName+"';";
+                                    Console.WriteLine("executing: "+sql);
                                     SQLiteCommand command = new SQLiteCommand(sql, liteConnect);
                                     Object result = command.ExecuteScalar();
                                     command.Dispose();
-                                    if(result.ToString() == "1"){
+                                    if(result !=null && result.ToString() == "1"){
 
                                     return true;
                                 }
@@ -205,6 +208,8 @@ public class TableIndex{
                         } catch(Exception e){
                                 Console.WriteLine(e.Message);
                                 Console.WriteLine(e.StackTrace);
+                                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
                                 S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">E " + e.Message); 
                                 S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">"+e.StackTrace);
                         }
@@ -226,13 +231,14 @@ public class TableIndex{
                          } catch(Exception e){
                                 Console.WriteLine(e.Message);
                                 Console.WriteLine(e.StackTrace);
+                                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
                                 S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">" + e.Message); 
                                 S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">"+e.StackTrace);
                         }
                         return false;
                         }
 
-                    
                       public  bool createIndexOnColumn(string tableName, string  columnName, string indexName , bool  isUnique  ){                 
                         try{
                                using  ( SQLiteConnection  liteConnect = new SQLiteConnection(liteConnectionString)){
@@ -247,6 +253,8 @@ public class TableIndex{
                          } catch(Exception e){
                                 Console.WriteLine(e.Message);
                                 Console.WriteLine(e.StackTrace);
+                                                            Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                            S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
                                 S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">" + e.Message); 
                                 S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">"+e.StackTrace);
                         }
@@ -276,9 +284,11 @@ public class TableIndex{
                         } catch(Exception e){
                         
                             Console.WriteLine(e.Message);
-                            Console.WriteLine(e.StackTrace);
+                            
                             S3UploadLibrary.writeToLog(e.Message);
-                            S3UploadLibrary.writeToLog(e.StackTrace);
+                            Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                            S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                            
                             S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + e.Message); 
                             S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">"+e.StackTrace);
                             return false;
@@ -309,8 +319,8 @@ public class TableIndex{
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
+                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
 
             }
 
@@ -344,9 +354,9 @@ public class TableIndex{
             catch (Exception e)
             {
                 Console.WriteLine("Error running script: "+theScript+"=>"+e.Message);
-                Console.WriteLine(e.StackTrace);
-               S3UploadLibrary.writeToLog("Error running script: "+theScript+"=>"+e.Message);
-               S3UploadLibrary.writeToLog(e.StackTrace);
+                S3UploadLibrary.writeToLog("Error running script: "+theScript+"=>"+e.Message);
+                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
             }
             return dt;
         } 

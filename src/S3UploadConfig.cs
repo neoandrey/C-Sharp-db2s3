@@ -45,7 +45,12 @@ namespace db2s3
         public string      emailFontSize{set; get;}
         public string      colour {set; get;}
         public string      borderColour{set; get;}
-        public string      region {set; get;}      
+        public string      region {set; get;}    
+        public int         s3ConnectionTimeOut {get; set;}  
+        public int         s3ReadWriteTimeOut {get; set;}  
+
+        public string      emailSeparator {get; set;}
+
 
     }
 }

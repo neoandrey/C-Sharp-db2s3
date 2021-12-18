@@ -43,6 +43,7 @@
     ,"runOnSchedule":  false
     ,"scheduleName" :""
     ,"sendNotification": true
+    ,"emailSeparator":";"
     ,"toAddress":""
     ,"fromAddress" :""
     ,"bccAddress":""
@@ -57,5 +58,7 @@
     ,"emailFontSize":""
     ,"colour":""
     ,"borderColour":""
+    ,"s3ConnectionTimeOut":10000
+    ,"s3ReadWriteTimeOut":10000
 
 }

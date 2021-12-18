@@ -41,9 +41,11 @@ namespace db2s3{
                 this.runS3Upload();
              }catch(Exception e){
                 Console.WriteLine("An error has occurred");
-                Console.WriteLine("Error: "+e.StackTrace);
+              
                 S3UploadLibrary.writeToLog("An error has occurred");
-                S3UploadLibrary.writeToLog("Error: "+e.StackTrace);
+                                            Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                            S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+              
 
              }
 
@@ -86,13 +88,15 @@ namespace db2s3{
             this.setUploadSession(createUploadSession());
             List<S3UploadItem> itemsUploaded =  startEntityUploadSession(entitiesToBeUploaded);
             itemsUploaded.ForEach(x=>x.save());
-           // this.getUploadSession().setGateway(String.Join(",", attemptedGateways.Select(x => x.getUrl()).ToArray()));
             this.getUploadSession().setUploadCount(itemsUploaded.Count);
             this.getUploadSession().setEndTime(DateTime.Now);
             this.getUploadSession().setStatus(S3UploadLibrary.SUCCESSFUL);
-            Console.WriteLine(this.getUploadSession().getStartTime().ToString());
-            Console.WriteLine(this.getUploadSession().getEndTime().ToString());
             this.getUploadSession().save();
+            DataTable    uploadedItemsTable   = S3UploadLibrary.getDataTable(itemsUploaded);
+            string  exportFile                = S3UploadLibrary.logFile+"_items_uploaded.csv";
+            if (itemsUploaded.Count >  0){
+                S3UploadLibrary.exportCSV(uploadedItemsTable,  exportFile);
+            }
         }
  
         public S3UploadSession createUploadSession(){
@@ -200,8 +204,8 @@ namespace db2s3{
 
                         Console.WriteLine(String.Format("Bucket {0} not found. Creating bucket now...", S3UploadLibrary.bucketName));
                         S3UploadLibrary.writeToLog(String.Format("Bucket {0} not found. Creating bucket now...", S3UploadLibrary.bucketName));
-                        Console.WriteLine("Bucket Name: "+S3UploadLibrary.bucketName);
-                        Console.WriteLine("Bucket Region: "+S3UploadLibrary.region);
+                        //Console.WriteLine("Bucket Name: "+S3UploadLibrary.bucketName);
+                        //Console.WriteLine("Bucket Region: "+S3UploadLibrary.region);
                         PutBucketResponse buckResponse = this.s3Client.PutBucket(new PutBucketRequest(){BucketName = S3UploadLibrary.bucketName, BucketRegion  = S3UploadLibrary.region }); 
         
                         Console.WriteLine("Bucket Response"+buckResponse.ToString());
@@ -219,9 +223,8 @@ namespace db2s3{
                              BucketName = S3UploadLibrary.bucketName
                             ,Key = entity.getName()
                             ,FilePath = entity.getFullName()
-                            ,Timeout               = TimeSpan.FromSeconds(100)
-                            ,ReadWriteTimeout      = TimeSpan.FromSeconds(100)  
-                          
+                            ,Timeout               = TimeSpan.FromSeconds(S3UploadLibrary.s3ConnectionTimeOut)
+                            ,ReadWriteTimeout      = TimeSpan.FromSeconds(S3UploadLibrary.s3ReadWriteTimeOut)                   
                         }; 
                         DateTime startTime = DateTime.Now;                 
                         this.s3Client.PutObject(request); 
@@ -237,10 +240,10 @@ namespace db2s3{
                         ++lastUploadedItemID;
                         uploadedItems.Add(new S3UploadItem()  
                             {  
-                            itemID              =   lastUploadedItemID, 
-                            sessionID           =   this.getUploadSession().sessionID, 
+                            itemID              = lastUploadedItemID, 
+                            sessionID           = this.getUploadSession().sessionID, 
                             parentFolder        = this.getUploadDirectory(),  
-                            fileName            = entity.filePath,  
+                            fileName            = entity.getFullName(),  
                             bucketName          = S3UploadLibrary.bucketName,
                             creationTime        = DateTime.Now,
                             fileSize            = entity.getSize(),

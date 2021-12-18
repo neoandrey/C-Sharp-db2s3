@@ -41,7 +41,7 @@
         ]
       },
       {"tableName": "upload_items"
-        ,"createScript":"CREATE  TABLE  upload_items (item_id INTEGER PRIMARY KEY, session_id INTEGER , parent_folder  TEXT,    file_name   TEXT,  creation_time TEXT,  upload_path TEXT, file_size INTEGER, upload_start_time  TEXT, upload_end_time TEXT, file_url TEXT,  upload_status INTEGER)"
+        ,"createScript":"CREATE  TABLE  upload_items (item_id INTEGER PRIMARY KEY, session_id INTEGER , parent_folder  TEXT,    file_name   TEXT, bucket_name   TEXT,  creation_time TEXT,  upload_path TEXT, file_size INTEGER, upload_start_time  TEXT, upload_end_time TEXT, file_url TEXT,  upload_status INTEGER)"
         ,"indexes":[
           {
             "indexName":"ix_session_id"
@@ -77,11 +77,15 @@
                         "indexName":"ix_upload_end_time"
                         ,"isUnique":false
                         ,"columns":["upload_end_time"]
-                        }
+                        }, {
+                          "indexName":"ix_bucket_name"
+                          ,"isUnique":false
+                          ,"columns":["bucket_name"]
+                          }
                         , {
                           "indexName":"ix_all"
                           ,"isUnique":false
-                          ,"columns":["item_id", "session_id" , "parent_folder",    "file_name",  "creation_time", "upload_path", "file_size", "upload_start_time", "upload_end_time", "file_url", "upload_status"]
+                          ,"columns":["item_id", "session_id" , "parent_folder",    "file_name", "bucket_name",  "creation_time", "upload_path", "file_size", "upload_start_time", "upload_end_time", "file_url", "upload_status"]
                           }
 
         ]

@@ -65,7 +65,14 @@ namespace db2s3{
                public static string                         region;    
                public static string                         profileName;  
 
-               public static string                         sqliteConfigFile;                       
+               public static string                         sqliteConfigFile;  
+
+               public  static  int                          s3ReadWriteTimeOut;
+
+               public static   int                          s3ConnectionTimeOut;      
+
+               public static  string                        emailSeparator;
+
             public  S3UploadLibrary(){ 
                     if (!File.Exists(logFile))  {
                           fs = File.CreateText(logFile);
@@ -162,6 +169,9 @@ namespace db2s3{
                         region                                   = uploadConfig.region;
                         sqliteConfigFile                         = uploadConfig.sqliteConfigFile;
                         sqliteHelper                             = new SQLiter(sqliteDBName, sqliteConfigFile);  
+                        s3ConnectionTimeOut                      = uploadConfig.s3ConnectionTimeOut;
+                        s3ReadWriteTimeOut                       = uploadConfig.s3ReadWriteTimeOut;
+                        emailSeparator                           = uploadConfig.emailSeparator;
                                     
                    
                     }catch(Exception e){
@@ -249,9 +259,14 @@ namespace db2s3{
                return dataTable;
           }
           
-          public static void exportCSV (DataTable dtDataTable, string strFilePath) {  
+          public static void exportCSV (DataTable dtDataTable, string strFilePath) { 
 
-                    StreamWriter sw = new StreamWriter(strFilePath, false);  
+                 try{ 
+
+                    StreamWriter sw = new StreamWriter(strFilePath, false); 
+
+                    Console.WriteLine("Exporting data to file: "+strFilePath); 
+                    S3UploadLibrary.writeToLog("Exporting data to file: "+strFilePath);    
 
                     for (int i = 0; i < dtDataTable.Columns.Count; i++) {  
                          sw.Write(dtDataTable.Columns[i]);  
@@ -278,6 +293,14 @@ namespace db2s3{
                     sw.Write(sw.NewLine);  
                     }  
                     sw.Close();  
+                     }catch(Exception e){
+
+                  Console.WriteLine("Error exporting data to file: "+strFilePath); 
+                  S3UploadLibrary.writeToLog("Error exporting data to file: "+strFilePath);                                          
+                  Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                  S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+ 
+            }
           } 
           public static long getLastID(string tableName, string columnName, string  columnAlias){
                long lastUploadSessionID  = 0;
@@ -408,9 +431,9 @@ namespace db2s3{
 
                foreach(KeyValuePair<string, Object>  fieldVal in  colValMap){
                       string field    = fieldVal.Key;
-                      object value    = fieldVal.Value;
+                      object value    = fieldVal.Value!=null?fieldVal.Value:"";
                       string valueStr = "";
-                       if (value.GetType().ToString().ToLower() =="system.int16"|| value.GetType().ToString().ToLower()== "system.int32"  || value.GetType().ToString().ToLower()== "system.int64"){
+                      if (value.GetType().ToString().ToLower() =="system.int16"|| value.GetType().ToString().ToLower()== "system.int32"  || value.GetType().ToString().ToLower()== "system.int64"){
                                       valueStr = String.Format(intFormat, value);
                          }else {
                               valueStr = String.Format(stringFormat, value);
