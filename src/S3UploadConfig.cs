@@ -15,7 +15,6 @@ namespace db2s3
         public string       serverName  { set; get;}
         public string       serverIPAddress  { set; get;}
         public string       additionalServerInfo { set; get;}
-
         public string      sqliteDatabaseName {set; get;}
         public string      sqliteDatabaseFile { set; get;}   
         public string      sqliteConfigFile {set; get;}       
@@ -48,8 +47,14 @@ namespace db2s3
         public string      region {set; get;}    
         public int         s3ConnectionTimeOut {get; set;}  
         public int         s3ReadWriteTimeOut {get; set;}  
-
         public string      emailSeparator {get; set;}
+
+        public string      borderWidth   {get; set;}
+
+          public string    headerBgColor   {get; set;}
+        public string      filterFileExtension {get; set;}
+
+        public int      urlValidityDays {get; set;}
 
 
     }

@@ -1,5 +1,6 @@
 {
     "directoryOfUploadfiles": "C:\\staging\\0"
+    ,"filterFileExtension":""
     ,"logFileName": "db2s3_log"
     ,"bucketName": "db-backup-bucket"
     ,"serverName":  "jump31"
@@ -60,5 +61,7 @@
     ,"borderColour":""
     ,"s3ConnectionTimeOut":10000
     ,"s3ReadWriteTimeOut":10000
+    ,"borderWidth":""
+    ,"headerBgColor":""
 
 }

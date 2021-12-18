@@ -143,7 +143,7 @@ public class TableIndex{
                 S3UploadLibrary.writeToLog("Error reading sqlite configuration file "+configFileName+": "+e.Message+"\n"+e.ToString());
                 Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
                 S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
- 
+                S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
             }
         }
 
@@ -206,12 +206,9 @@ public class TableIndex{
                                 }
                                }
                         } catch(Exception e){
-                                Console.WriteLine(e.Message);
-                                Console.WriteLine(e.StackTrace);
-                                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
-                                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
-                                S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">E " + e.Message); 
-                                S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">"+e.StackTrace);
+                            Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                            S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                            S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
                         }
                         return false;
                         }
@@ -229,12 +226,9 @@ public class TableIndex{
 
                                }
                          } catch(Exception e){
-                                Console.WriteLine(e.Message);
-                                Console.WriteLine(e.StackTrace);
-                                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
-                                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
-                                S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">" + e.Message); 
-                                S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">"+e.StackTrace);
+                             Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                            S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                            S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
                         }
                         return false;
                         }
@@ -251,12 +245,10 @@ public class TableIndex{
 
                                }
                          } catch(Exception e){
-                                Console.WriteLine(e.Message);
-                                Console.WriteLine(e.StackTrace);
-                                                            Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+
+                            Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
                             S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
-                                S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">" + e.Message); 
-                                S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">"+e.StackTrace);
+                            S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
                         }
                         return false;
                         }
@@ -283,14 +275,9 @@ public class TableIndex{
                                     
                         } catch(Exception e){
                         
-                            Console.WriteLine(e.Message);
-                            
-                            S3UploadLibrary.writeToLog(e.Message);
                             Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
                             S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
-                            
-                            S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + e.Message); 
-                            S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">"+e.StackTrace);
+                            S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
                             return false;
                         }
 
@@ -319,8 +306,9 @@ public class TableIndex{
             }
             catch (Exception e)
             {
-                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
-                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                            Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                            S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                            S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
 
             }
 
@@ -353,10 +341,11 @@ public class TableIndex{
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error running script: "+theScript+"=>"+e.Message);
-                S3UploadLibrary.writeToLog("Error running script: "+theScript+"=>"+e.Message);
+                Console.WriteLine("Error running script: "+theScript);
+                S3UploadLibrary.writeToLog("Error running script: "+theScript);
                 Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
                 S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
             }
             return dt;
         } 

@@ -25,40 +25,51 @@ namespace db2s3{
     class S3Uploader{
         public AmazonS3Client  s3Client;
 
+//        public  static AmazonS3Client s3ClientForGet;
+
         public AmazonS3Config s3Config = new AmazonS3Config();
         public string uploadDirectory;
         //public  List<S3UploadSession> uploadSession;
         public  List<S3Gateway> s3Gateways;
         public S3UploadSession uploadSession;
         public  List<S3Gateway> attemptedGateways   =  new List<S3Gateway>();
+        public static string directoryOfUploadfilesOvrd;
+        public static string bucketNameOvrd;
+        public static string serverNameOvrd;
+        public static string serverIPAddressOvrd;
+        public static string accessIDOvrd;
+        public static string accessKeyOvrd;
+        public static string filterFileExtensionOvrd;
+        public static string fileToBeDownloaded;
 
-
+        public static string outputFile;
 
         public  List<S3UploadEntity> entitiesToBeUploaded =  new List<S3UploadEntity> ();
         public S3Uploader(){
              try{
                 new S3UploadLibrary();
-                this.runS3Upload();
-             }catch(Exception e){
-                Console.WriteLine("An error has occurred");
-              
-                S3UploadLibrary.writeToLog("An error has occurred");
-                                            Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
-                            S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
-              
-
-             }
-
-        }
-        public S3Uploader(string configFilePath){
-              try{
-                new S3UploadLibrary(configFilePath);
+                this.checkOverrides();
                 this.runS3Upload();
              }catch(Exception e){
                 Console.WriteLine("An error has occurred");
                 S3UploadLibrary.writeToLog("An error has occurred");
                 Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
                 S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
+             }
+
+        }
+        public S3Uploader(string configFilePath){
+              try{
+                new S3UploadLibrary(configFilePath);
+                this.checkOverrides();
+                this.runS3Upload();
+             }catch(Exception e){
+                Console.WriteLine("An error has occurred");
+                S3UploadLibrary.writeToLog("An error has occurred");
+                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
              }
         }
 
@@ -96,7 +107,11 @@ namespace db2s3{
             string  exportFile                = S3UploadLibrary.logFile+"_items_uploaded.csv";
             if (itemsUploaded.Count >  0){
                 S3UploadLibrary.exportCSV(uploadedItemsTable,  exportFile);
+                if(S3UploadLibrary.sendNotification)	S3UploadLibrary.sendMailNotification(new Dictionary<string, DataTable>(){{"File Upload Report",uploadedItemsTable}});
+            }else{
+                 if(S3UploadLibrary.sendNotification)	S3UploadLibrary.sendMailNotification(new Dictionary<string, DataTable>(){{"Empty File Upload Report. No File to Upload.",new DataTable()}});
             }
+   
         }
  
         public S3UploadSession createUploadSession(){
@@ -109,6 +124,31 @@ namespace db2s3{
               session.setUploadCount(0);
               session.setStatus(S3UploadLibrary.PENDING);
               return session;
+        }
+
+        public void checkOverrides(){
+
+             if( directoryOfUploadfilesOvrd != null){
+                 S3UploadLibrary.directoryOfUploadfiles = S3UploadLibrary.checkUNCFilePath(directoryOfUploadfilesOvrd);
+             }  
+             if( bucketNameOvrd != null){
+                 S3UploadLibrary.bucketName = bucketNameOvrd;
+             } 
+             if( serverNameOvrd != null){
+                 S3UploadLibrary.serverName = serverNameOvrd;
+             }            
+            if( serverIPAddressOvrd != null){
+                S3UploadLibrary.serverIPAddress = serverIPAddressOvrd;
+            }          
+            if(accessIDOvrd !=null){
+                 S3UploadLibrary.accessID = accessIDOvrd;
+            }
+             if(accessKeyOvrd !=null){
+                 S3UploadLibrary.accessKey = accessKeyOvrd;
+            }
+            if(filterFileExtensionOvrd !=null){
+                S3UploadLibrary.filterFileExtension = filterFileExtensionOvrd;
+            }
 
         }
 
@@ -123,6 +163,39 @@ namespace db2s3{
                         return true;
                     };
         }
+
+       /* public static void getObjectFromS3(){
+           
+           try{
+                new S3UploadLibrary();
+                GetObjectRequest request = new GetObjectRequest();
+                request.BucketName = bucketNameOvrd;
+                request.Key        = fileToBeDownloaded;
+
+                              string accessKey = S3UploadLibrary.accessID;
+              string secretKey = S3UploadLibrary.accessKey;
+              foreach(S3Gateway gateway in s3Gateways){
+                   attemptedGateways.Add(gateway);
+                   if (initS3Client(accessKey, secretKey, gateway.getUrl())){
+                        break;
+                   }
+              }
+              if(this.s3Client!= null){
+                
+                GetObjectResponse response = s3Client.GetObject(request);
+                response.WriteResponseStreamToFile(S3UploadLibrary.checkUNCFilePath(outputFile));
+              }
+           } catch(Exception e){
+
+                Console.WriteLine("Error downloading file from  S3");
+                S3UploadLibrary.writeToLog("Error downloading file from  S3");
+                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+
+               
+           }
+        }
+        */
 
         public bool initS3Client(string accessKey, string secretKey, string gateway){
               bool isConnected = false;
@@ -165,10 +238,9 @@ namespace db2s3{
               }catch(Exception e ){
 
                    Console.WriteLine("Unable to connect to S3 via gateway: "+gateway);
-                  Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
-
-                S3UploadLibrary.writeToLog("Unable to connect to S3 via gateway: "+gateway);
-                S3UploadLibrary.writeToLog( S3UploadLibrary.getErrorMessage(e));
+                   Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                    S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                    S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
 
               } 
                return isConnected;
@@ -233,7 +305,7 @@ namespace db2s3{
                         GetPreSignedUrlRequest urlRequest = new GetPreSignedUrlRequest(){
                                BucketName = S3UploadLibrary.bucketName
                             ,Key = entity.getName()
-                            ,Expires = DateTime.Now.Add(new TimeSpan(1000, 0, 0, 0))
+                            ,Expires = DateTime.Now.Add(new TimeSpan(S3UploadLibrary.urlValidityDays, 0, 0, 0))
                         };  
                         
                         string url = this.s3Client.GetPreSignedURL(urlRequest);
@@ -258,10 +330,11 @@ namespace db2s3{
                   
 
                 }catch(Exception e){
-                   Console.WriteLine("Error uploading file: "+currentFile);
-                   S3UploadLibrary.writeToLog("Error uploading file: "+currentFile);
-                  Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
-                  S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                    Console.WriteLine("Error uploading file: "+currentFile);
+                    S3UploadLibrary.writeToLog("Error uploading file: "+currentFile);
+                    Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                    S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                    S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
 
                 }
 
@@ -326,28 +399,42 @@ namespace db2s3{
              
 				
 				string [] fileEntries = Directory.GetFiles(targetDirectory);
+                if(S3UploadLibrary.filterFileExtension !=null){ 
 
+                    
+                    foreach(string fileName in fileEntries){
+                        string extension = Path.GetExtension(fileName).ToLower();
+                        if(S3UploadLibrary.filterFileExtension.ToLower() ==extension ){
+                            uploadEntities.Add( new S3UploadEntity(fileName));
+                        }
+                        
+                    }
+
+                } else{ 
 				foreach(string fileName in fileEntries){
 						uploadEntities.Add( new S3UploadEntity(fileName));
-				}
-					
-			if(scanSubfolders){
-				 
-				string [] subdirectoryEntries = Directory.GetDirectories(targetDirectory);
-				foreach(string subdirectory in subdirectoryEntries){
-					getUploadEntitiesFromPath(subdirectory,scanSubfolders);
-				}
-				 
-			 }
-
+				 	
+                    }
+                  }
+                if(scanSubfolders){            
+                    string [] subdirectoryEntries = Directory.GetDirectories(targetDirectory);
+                    foreach(string subdirectory in subdirectoryEntries){
+                        getUploadEntitiesFromPath(subdirectory,scanSubfolders);
+                    }       
 			}
 			
-			return uploadEntities;
+		
 			
-	}
+	}else{
 
+        Console.WriteLine(string.Format("The directory specified,{0}, does not exist or is not accessible.",targetDirectory ));
+        S3UploadLibrary.writeToLog(string.Format("The directory specified,{0}, does not exist or is not accessible.",targetDirectory ));
+
+    }
+    	return uploadEntities;
+        } 
      public  void setUploadSession(S3UploadSession session){
-           this.uploadSession = session;
+           this.uploadSession = session; 
      }
 
      
@@ -358,31 +445,62 @@ namespace db2s3{
                 string configFile 		= ""; 
             try {	
                 for(int i =0; i< args.Length; i++){
-                    
                     if (args[0].ToLower()=="-h" ||args[0].ToLower()=="help" || args[0].ToLower()=="/?" || args[0].ToLower()=="?" ){
-                        
+		
                         Console.WriteLine(" This application uploads files from a specified location to a specified S3 bucket");
-                        Console.WriteLine(" Usage: ");	
+                        Console.WriteLine(" Usage: ");
+                        Console.WriteLine(" -h: This parameter is used to print this help message.");		
                         Console.WriteLine(" -c: This parameter is used to specify the configuration file to be used.");
-                        Console.WriteLine(" -h: This parameter is used to print this help message.");	
+                        Console.WriteLine(" -d: This parameter is used to specify the directory or folder to scan for upload items.");
+                        Console.WriteLine(" -b: The  S3 bucket to upload items to.");
+                        Console.WriteLine(" -s: The name of the server from which items are uploaded.");
+                        Console.WriteLine(" -s: The IP address of the server from which items are uploaded.");
+                        Console.WriteLine(" -a: The Access ID used to connect to the S3 gateway");
+                        Console.WriteLine(" -k: The Access key used to connect to the S3 gateway");
+                        Console.WriteLine(" -x: The file extension type to filter from the directory specified by the -d option.");
                                                         
                     } else if  ((i+1)< args.Length ) {
                         if(args[i].ToLower()=="-c" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
                         configFile =  args[(i+1)];	
+                        }else if(args[i].ToLower()=="-d" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
+                            directoryOfUploadfilesOvrd =  args[(i+1)];	
+                        }else if(args[i].ToLower()=="-b" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
+                            bucketNameOvrd =  args[(i+1)];	
+                        }else if(args[i].ToLower()=="-s" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
+                            serverNameOvrd =  args[(i+1)];	
+                        }else if(args[i].ToLower()=="-i" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
+                            serverIPAddressOvrd =  args[(i+1)];	
+                        }else if(args[i].ToLower()=="-a" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
+                            accessIDOvrd =  args[(i+1)];	
+                        }else if(args[i].ToLower()=="-k" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
+                            accessKeyOvrd =  args[(i+1)];	
+                        }else if(args[i].ToLower()=="-x" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
+                            filterFileExtensionOvrd =  args[(i+1)];	
+                        }else if(args[i].ToLower()=="-f" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
+                            fileToBeDownloaded =  args[(i+1)];	
+                        }else if(args[i].ToLower()=="-o" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
+                            outputFile =  args[(i+1)];	
+                        }
                     }
-                }
-            }	
+               
+                 }	
+            //if(fileToBeDownloaded ==null){ 
                 if(string.IsNullOrEmpty(configFile)){
                     
-                    new  S3Uploader();
-                    
-                }else {					
-                    new  S3Uploader(configFile);
-                }
+                        new  S3Uploader();
+                        
+                    }else {					
+                        new  S3Uploader(configFile);
+                    }
+
+              /*  } else{
+
+                }*/
             }catch(Exception e) {
-                
-                    Console.WriteLine( e.Message);
-                    Console.WriteLine(e.StackTrace);
+
+                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                //S3UploadLibrary.log(S3UploadLibrary.getErrorMessage(e));
+                S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
 
             
             }

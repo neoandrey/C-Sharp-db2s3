@@ -59,7 +59,7 @@ namespace db2s3{
                public  static string                       colour                    =  ""; 
                public  static string                       borderColour              =  ""; 
                public   static object                      fileLocker                =  new object();
-               public  static SQLiter                     sqliteHelper;
+               public  static SQLiter                      sqliteHelper;
                public static  StringBuilder                 emailError                =   new StringBuilder();
                public static string                         sqliteDBName;
                public static string                         region;    
@@ -72,6 +72,17 @@ namespace db2s3{
                public static   int                          s3ConnectionTimeOut;      
 
                public static  string                        emailSeparator;
+
+               public static  StringBuilder                 emailBody  =   new StringBuilder();
+
+               public static string borderWidth;
+
+               public static string headerBgColor;
+
+               public static string filterFileExtension;
+
+               public static int urlValidityDays;
+               
 
             public  S3UploadLibrary(){ 
                     if (!File.Exists(logFile))  {
@@ -105,10 +116,11 @@ namespace db2s3{
                               }
                          }catch(Exception e){
 
-                              Console.WriteLine("Error reading configuration file "+cfgFile+": "+e.Message+"\n"+e.ToString());
-                              Console.WriteLine(e.StackTrace);
-                              log("Error reading configuration file "+cfgFile+": "+e.Message+"\n"+e.ToString());
-                              log(e.StackTrace);
+                              Console.WriteLine("Error reading configuration file "+cfgFile);
+                              log("Error reading configuration file "+cfgFile);
+                              Console.WriteLine( getErrorMessage(e));
+                              log(getErrorMessage(e));
+                              emailError.AppendLine("<div style=\"color:red\">  " + getErrorMessage(e)+"</div>"); 
 
                          }
                     	
@@ -129,32 +141,32 @@ namespace db2s3{
                     writeToLog("Reading contents of configuration file: "+configFileName);
                     Console.WriteLine("Reading contents of configuration file: "+configFileName);
                     try{
-                        string  propertyString                  = File.ReadAllText(configFileName);
-                        uploadConfig                            = Newtonsoft.Json.JsonConvert.DeserializeObject<S3UploadConfig>(propertyString); 
-                        directoryOfUploadfiles                  = uploadConfig.directoryOfUploadfiles;
-                        s3Gateways	                             = uploadConfig.s3Gateways;
-                        logFile    	                        = uploadConfig.logFileName;
-                        bucketName 	                        = uploadConfig.bucketName !=null ? uploadConfig.bucketName.Replace("_","-") :"db2s3";
-                        serverName	                             = uploadConfig.serverName  ;
-                        serverIPAddress 	                   = uploadConfig.serverIPAddress  ;
-                        additionalServerInfo                    = uploadConfig.additionalServerInfo ;
-                        sqliteDBName                            = uploadConfig.sqliteDatabaseName;
-                        sqliteDatabaseFile                      = uploadConfig.sqliteDatabaseFile ;   
-                        accessID 	                             = uploadConfig.accessID ;
-                        accessKey	                             = uploadConfig.accessKey ;
+                        string  propertyString                   = File.ReadAllText(configFileName);
+                        uploadConfig                             = Newtonsoft.Json.JsonConvert.DeserializeObject<S3UploadConfig>(propertyString); 
+                        directoryOfUploadfiles                   = uploadConfig.directoryOfUploadfiles;
+                        s3Gateways	                              = uploadConfig.s3Gateways;
+                        logFile    	                         = uploadConfig.logFileName;
+                        bucketName 	                         = uploadConfig.bucketName !=null ? uploadConfig.bucketName.Replace("_","-") :"db2s3";
+                        serverName	                              = uploadConfig.serverName  ;
+                        serverIPAddress 	                    = uploadConfig.serverIPAddress  ;
+                        additionalServerInfo                     = uploadConfig.additionalServerInfo ;
+                        sqliteDBName                             = uploadConfig.sqliteDatabaseName;
+                        sqliteDatabaseFile                       = uploadConfig.sqliteDatabaseFile ;   
+                        accessID 	                              = uploadConfig.accessID ;
+                        accessKey	                              = uploadConfig.accessKey ;
                         profilePath	                         = uploadConfig.profilePath ;
-                        useProfile	                             = uploadConfig.useProfileFile ;
-                         profileName                              = uploadConfig.profileName;
-                        centralInventoryServer                  = uploadConfig.centralInventoryServer ;
-                        centralInventoryUser                    = uploadConfig.centralInventoryUser ;
-                        centralInventoryPassword                = uploadConfig.centralInventoryPassword ;
-                        centralInventoryDBName                  = uploadConfig.centralInventoryDatabaseName ;
+                        useProfile	                              = uploadConfig.useProfileFile ;
+                         profileName                             = uploadConfig.profileName;
+                        centralInventoryServer                   = uploadConfig.centralInventoryServer ;
+                        centralInventoryUser                     = uploadConfig.centralInventoryUser ;
+                        centralInventoryPassword                 = uploadConfig.centralInventoryPassword ;
+                        centralInventoryDBName                   = uploadConfig.centralInventoryDatabaseName ;
                         runOnSchedule	 	                    = uploadConfig.runOnSchedule;
                         scheduleName	 	                    = uploadConfig.scheduleName ;
                         sendNotification 	                    = uploadConfig.sendNotification ;
-                        toAddress 	 	                    = uploadConfig.toAddress  ;
+                        toAddress 	 	                         = uploadConfig.toAddress  ;
                         fromAddress		                    = uploadConfig.fromAddress ;
-                        bccAddress		                    = uploadConfig.bccAddress  ;
+                        bccAddress		                         = uploadConfig.bccAddress  ;
                         ccAddress		                         = uploadConfig.ccAddress  ;
                         smtpServer	                              = uploadConfig.smtpServer  ;
                         smtpPort		                         = uploadConfig.smtpPort != null && uploadConfig.smtpPort.Length>0 ?Convert.ToInt32(uploadConfig.smtpPort):0  ;
@@ -172,18 +184,156 @@ namespace db2s3{
                         s3ConnectionTimeOut                      = uploadConfig.s3ConnectionTimeOut;
                         s3ReadWriteTimeOut                       = uploadConfig.s3ReadWriteTimeOut;
                         emailSeparator                           = uploadConfig.emailSeparator;
-                                    
-                   
+                        headerBgColor                            = uploadConfig.headerBgColor;
+                        borderWidth                              = uploadConfig.borderWidth;
+                        filterFileExtension                      = uploadConfig.filterFileExtension;
+                        urlValidityDays                          = uploadConfig.urlValidityDays;
+                                             
                     }catch(Exception e){
 
-                    Console.WriteLine("Error reading configuration file: "+e.Message);
-                    Console.WriteLine(e.StackTrace);
+                         Console.WriteLine("Error reading configuration file: "+e.Message);
+                         writeToLog("Error reading configuration file: "+e.Message);
+                         Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                         writeToLog(getErrorMessage(e));
+                         emailError.AppendLine("<div style=\"color:red\">  " + getErrorMessage(e)+"</div>");             
 
                     }
                     writeToLog("Configuration successfully loaded. ");
                     Console.WriteLine("Configuration successfully loaded.");
                     
                }
+
+     public  static void sendMailNotification(Dictionary<string, DataTable> dTableMap){
+
+            try {
+	               Console.WriteLine("Sending Notification... ");
+				S3UploadLibrary.writeToLog("Sending Notification... ");
+                    emailBody  = new StringBuilder();
+				emailBody.AppendLine("<div style=\"color:black\">Hi, All.</div>");
+				emailBody.AppendLine("<div style=\"color:black\">\n</div>");
+				emailBody.AppendLine("<div style=\"color:black\">Trust this meets you well</div>");
+				emailBody.AppendLine("<div style=\"color:black\">\n</div>");
+				emailBody.AppendLine("<div style=\"color:black\">Please see details for the file upload session for the contents of "+S3UploadLibrary.directoryOfUploadfiles+" folder below: </div>");
+                    MailMessage message = new MailMessage();
+	
+				if ( S3UploadLibrary.toAddress !=null){
+					foreach (var address in S3UploadLibrary.toAddress.Split(new [] {S3UploadLibrary.emailSeparator}, StringSplitOptions.RemoveEmptyEntries)){
+							if(!string.IsNullOrWhiteSpace(address)){
+										message.To.Add(address);   	
+							}
+					}
+				}
+				if ( S3UploadLibrary.ccAddress !=null){
+					foreach (var address in S3UploadLibrary.ccAddress.Split(new [] {S3UploadLibrary.emailSeparator}, StringSplitOptions.RemoveEmptyEntries)){
+						if(!string.IsNullOrWhiteSpace(address)){
+							message.CC.Add(address);   	
+						}
+					}
+				}
+				if ( S3UploadLibrary.bccAddress !=null){
+					foreach (var address in S3UploadLibrary.bccAddress.Split(new [] {S3UploadLibrary.emailSeparator}, StringSplitOptions.RemoveEmptyEntries)){
+								if(!string.IsNullOrWhiteSpace(address)){
+											message.Bcc.Add(address);   	
+								}
+					}
+				}
+				
+				Console.WriteLine("Sending Notification... ");
+				S3UploadLibrary.writeToLog("Sending Notification... ");
+				message.From = new MailAddress(S3UploadLibrary.fromAddress);				
+				message.Subject = "S3 Upload Session SReport for "+S3UploadLibrary.directoryOfUploadfiles+" at  "+DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss");
+				message.IsBodyHtml = true;
+		
+				emailBody.AppendLine("<style type=\"text/css\">");
+				emailBody.AppendLine("table.gridtable {");
+				emailBody.AppendLine("	font-family:"+S3UploadLibrary.emailFontFamily+";");
+				emailBody.AppendLine("	font-size:"+S3UploadLibrary.emailFontSize+";");
+				emailBody.AppendLine("	color:"+S3UploadLibrary.borderColour+";");
+				emailBody.AppendLine("	border-width:"+S3UploadLibrary.borderWidth+";");
+				emailBody.AppendLine("	border-color: "+S3UploadLibrary.borderColour+";");
+				emailBody.AppendLine("	border-collapse: collapse;");
+				emailBody.AppendLine("}");
+				emailBody.AppendLine("table.gridtable th {");
+				emailBody.AppendLine("	border-width: "+S3UploadLibrary.borderWidth+";");
+				emailBody.AppendLine("	padding: 8px;");
+				emailBody.AppendLine("	border-style: solid;");
+				emailBody.AppendLine("	border-color:"+S3UploadLibrary.borderColour+";");
+				emailBody.AppendLine("	background-color:"+S3UploadLibrary.headerBgColor+";");
+				emailBody.AppendLine("}");
+				emailBody.AppendLine("table.gridtable td {");
+				emailBody.AppendLine("	border-width: 1px;");
+				emailBody.AppendLine("	padding: 8px;");
+				emailBody.AppendLine("	border-style: solid;");
+				emailBody.AppendLine("	border-color: "+S3UploadLibrary.borderColour+";");
+				emailBody.AppendLine("}");
+				emailBody.AppendLine("</style>");
+				
+				foreach(KeyValuePair<string, DataTable>  tabMap in dTableMap){
+					 emailBody.AppendLine("<div>\n</div>");
+				
+				     emailBody.AppendLine("<div><hr/></div>");
+					 emailBody.AppendLine("<div justify=\"left\"><table class=\"gridtable\">");
+					 emailBody.AppendLine("<thead>");
+				     emailBody.AppendLine("<caption style=\"color:gray\" justify=\"left\">"+tabMap.Key+"</caption>");
+					 foreach (DataColumn col in tabMap.Value.Columns){
+					 	emailBody.AppendLine("<th>"+col.ColumnName+"</th>");
+					 }
+					 
+					emailBody.AppendLine("</thead>");
+					emailBody.AppendLine("<tbody>");
+					
+					int k = 0;
+			        foreach (DataRow row in tabMap.Value.Rows) {
+                      if(k%2!=0){
+								emailBody.AppendLine("<tr style=\"background-color:#ffffff\"> ");   // <td>"+row["INDEX_NO"]+"</td><td>"+row["PARAMETER"]+"</td><td>"+row["VALUE"]+"</td></tr>");
+					    } else{
+								emailBody.AppendLine("<tr style=\"background-color:"+S3UploadLibrary.alternateRowColour+"\">"); //<td>"+row["INDEX_NO"]+"</td><td>"+row["PARAMETER"]+"</td><td>"+row["VALUE"]+"</td></tr>");
+					  }
+					
+					  foreach(DataColumn dCol in  tabMap.Value.Columns){
+						  if(dCol.ToString()=="no."){
+							  		emailBody.AppendLine("<td>"+(int.Parse(row[dCol.ToString()].ToString()) +1)+"</td>");
+
+						  }else  {
+
+								emailBody.AppendLine("<td>"+ row[dCol.ToString()].ToString()+"</td>");
+						  }						   
+					  }
+					  emailBody.AppendLine("</tr>");
+				      ++k;
+			        }
+					 emailBody.AppendLine("</tbody>");
+			         emailBody.AppendLine("</table></div>");
+				 }
+			    
+ 		   emailBody.AppendLine("<div><hr/></div>");
+			if(!string.IsNullOrWhiteSpace(emailError.ToString())){
+				emailBody.AppendLine("<div><h3><ul> Error List </h3></ul></div>");
+				emailBody.AppendLine("<div>\n</div>");
+				emailBody.AppendLine(emailError.ToString());
+			}
+			emailBody.AppendLine("<div>\n</div>");
+				emailBody.AppendLine("<div>\n</div>");
+			emailBody.AppendLine("Thank you.");
+			
+	        message.Body = emailBody.ToString();
+			SmtpClient smtpClient = new SmtpClient();
+			smtpClient.UseDefaultCredentials = true;
+
+			smtpClient.Host = S3UploadLibrary.smtpServer;
+			smtpClient.Port = Int32.Parse(S3UploadLibrary.smtpPort.ToString());
+			smtpClient.EnableSsl = S3UploadLibrary.isSSLEnabled;
+			smtpClient.Credentials = new System.Net.NetworkCredential(S3UploadLibrary.sender, S3UploadLibrary.senderPassword);
+			smtpClient.Send(message);
+		} catch(Exception  e){
+			
+				Console.WriteLine("Error sending email notification ");
+				writeToLog("Error sending email notification");
+				Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+				S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));   	
+		}
+
+	}
 
                public static void  writeToLog(string logMessage){
 
@@ -195,8 +345,9 @@ namespace db2s3{
                               }
                          }catch(Exception  e){
 
-                              Console.WriteLine("Error writing data to log file: "+e.Message);
-                              Console.WriteLine(e.StackTrace);
+                         Console.WriteLine( getErrorMessage(e));
+                         log(getErrorMessage(e));
+                         emailError.AppendLine("<div style=\"color:red\">  " + getErrorMessage(e)+"</div>"); 
 
                          }
                     });
@@ -292,13 +443,14 @@ namespace db2s3{
                     }  
                     sw.Write(sw.NewLine);  
                     }  
-                    sw.Close();  
-                     }catch(Exception e){
+                     sw.Close();  
+                 }catch(Exception e){
 
-                  Console.WriteLine("Error exporting data to file: "+strFilePath); 
-                  S3UploadLibrary.writeToLog("Error exporting data to file: "+strFilePath);                                          
-                  Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
-                  S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                         Console.WriteLine("Error exporting data to file: "+strFilePath); 
+                         S3UploadLibrary.writeToLog("Error exporting data to file: "+strFilePath);                                          
+                         Console.WriteLine( getErrorMessage(e));
+                         writeToLog(getErrorMessage(e));
+                         emailError.AppendLine("<div style=\"color:red\">  " + getErrorMessage(e)+"</div>"); 
  
             }
           } 
@@ -331,12 +483,11 @@ namespace db2s3{
 
         public static string getErrorMessage(Exception e){
 
-             StringBuilder errorBuilder   =  new StringBuilder();
-                  errorBuilder.Append("\nError Message: "+e.Message+"\n");
-                  errorBuilder.Append("\nError Source: "+e.Source+"\n");
-                  errorBuilder.Append("\nError Details: "+e.ToString()+"\n");
-
-               return errorBuilder.ToString();
+          StringBuilder errorBuilder   =  new StringBuilder();
+          errorBuilder.Append("\nError Message: "+e.Message+"\n");
+          errorBuilder.Append("\nError Source: "+e.Source+"\n");
+          errorBuilder.Append("\nError Details: "+e.ToString()+"\n");
+          return errorBuilder.ToString();
         }
 
           public static string getColumnValueMapForWhere(Dictionary<string,object> rawMap, string comparison){
