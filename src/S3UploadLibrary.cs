@@ -237,7 +237,7 @@ namespace db2s3{
 								}
 					}
 				}
-				
+			  if ( S3UploadLibrary.toAddress !=null){
 				Console.WriteLine("Sending Notification... ");
 				S3UploadLibrary.writeToLog("Sending Notification... ");
 				message.From = new MailAddress(S3UploadLibrary.fromAddress);				
@@ -325,6 +325,11 @@ namespace db2s3{
 			smtpClient.EnableSsl = S3UploadLibrary.isSSLEnabled;
 			smtpClient.Credentials = new System.Net.NetworkCredential(S3UploadLibrary.sender, S3UploadLibrary.senderPassword);
 			smtpClient.Send(message);
+            }else{
+                 	Console.WriteLine("Email could not be sent as there is no recepient in the toAddress field. ");
+				writeToLog("Email could not be sent as there is no recepient in the toAddress field.");
+
+            }
 		} catch(Exception  e){
 			
 				Console.WriteLine("Error sending email notification ");
