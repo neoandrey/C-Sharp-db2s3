@@ -9,8 +9,8 @@
     ,"sqliteDatabaseName" : "db2s3" 
     ,"sqliteDatabaseFile" : "..\\db\\db2s3.sqlite" 
     ,"sqliteConfigFile" : "..\\conf\\sqliter.json" 
-    ,"accessID": "RFIFQUZALSLGVVAFBLRD"
-    ,"accessKey": "sJ60uXXb/ZPRmPXjIEFIYOdYa+XRReVzulMmcqw8"
+    ,"accessID": ""
+    ,"accessKey": ""
     ,"profilePath": ""
     ,"profileName":""
     ,"useProfileFile" : false
@@ -63,5 +63,6 @@
     ,"s3ReadWriteTimeOut":10000
     ,"borderWidth":""
     ,"headerBgColor":""
+    ,"urlValidityDays":1000
 
 }
