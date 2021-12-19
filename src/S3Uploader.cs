@@ -162,6 +162,7 @@ namespace db2s3{
             this.getUploadSession().save();
             DataTable    uploadedItemsTable   = S3UploadLibrary.getDataTable(itemsUploaded);
             string  exportFile                = S3UploadLibrary.logFile+"_items_uploaded.csv";
+            exportFile = exportFile.Replace("log","csv");
             if (itemsUploaded.Count >  0){
                 S3UploadLibrary.exportCSV(uploadedItemsTable,  exportFile);
                 if(S3UploadLibrary.sendNotification)	S3UploadLibrary.sendMailNotification(new Dictionary<string, DataTable>(){{"File Upload Report",uploadedItemsTable}});
