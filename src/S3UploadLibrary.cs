@@ -216,28 +216,28 @@ namespace db2s3{
 				emailBody.AppendLine("<div style=\"color:black\">Please see details for the file upload session for the contents of "+S3UploadLibrary.directoryOfUploadfiles+" folder below: </div>");
                     MailMessage message = new MailMessage();
 	
-				if ( S3UploadLibrary.toAddress !=null){
+				if ( !string.IsNullOrEmpty(S3UploadLibrary.toAddress)){
 					foreach (var address in S3UploadLibrary.toAddress.Split(new [] {S3UploadLibrary.emailSeparator}, StringSplitOptions.RemoveEmptyEntries)){
 							if(!string.IsNullOrWhiteSpace(address)){
 										message.To.Add(address);   	
 							}
 					}
 				}
-				if ( S3UploadLibrary.ccAddress !=null){
+				if ( !string.IsNullOrEmpty(S3UploadLibrary.ccAddress)){
 					foreach (var address in S3UploadLibrary.ccAddress.Split(new [] {S3UploadLibrary.emailSeparator}, StringSplitOptions.RemoveEmptyEntries)){
 						if(!string.IsNullOrWhiteSpace(address)){
 							message.CC.Add(address);   	
 						}
 					}
 				}
-				if ( S3UploadLibrary.bccAddress !=null){
+				if ( !string.IsNullOrEmpty(S3UploadLibrary.bccAddress)){
 					foreach (var address in S3UploadLibrary.bccAddress.Split(new [] {S3UploadLibrary.emailSeparator}, StringSplitOptions.RemoveEmptyEntries)){
 								if(!string.IsNullOrWhiteSpace(address)){
 											message.Bcc.Add(address);   	
 								}
 					}
 				}
-			  if ( S3UploadLibrary.toAddress !=null){
+			  if ( !string.IsNullOrEmpty(S3UploadLibrary.toAddress)){
 				Console.WriteLine("Sending Notification... ");
 				S3UploadLibrary.writeToLog("Sending Notification... ");
 				message.From = new MailAddress(S3UploadLibrary.fromAddress);				
