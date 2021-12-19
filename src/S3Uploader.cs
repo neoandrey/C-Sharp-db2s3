@@ -40,11 +40,68 @@ namespace db2s3{
         public static string accessIDOvrd;
         public static string accessKeyOvrd;
         public static string filterFileExtensionOvrd;
-        public static string fileToBeDownloaded;
-
-        public static string outputFile;
+        public static string outputDirectory;
 
         public  List<S3UploadEntity> entitiesToBeUploaded =  new List<S3UploadEntity> ();
+
+               public S3Uploader(string[] filesToDownload){
+                try{
+                    new S3UploadLibrary();
+                    this.checkOverrides();
+                    outputDirectory = S3UploadLibrary.checkUNCFilePath(outputDirectory);
+                    string accessKey         = S3UploadLibrary.accessID;
+                    string secretKey         = S3UploadLibrary.accessKey;
+                    bucketNameOvrd           = bucketNameOvrd!=null ? bucketNameOvrd:S3UploadLibrary.bucketName;
+                    if(outputDirectory!=null &&  !string.IsNullOrEmpty(outputDirectory) && bucketNameOvrd!=null && !string.IsNullOrEmpty(bucketNameOvrd) && filesToDownload !=null){ 
+                        if(Directory.Exists(outputDirectory)){    
+                            foreach(S3Gateway gateway in s3Gateways){               
+                                attemptedGateways.Add(gateway);
+                                if (initS3Client(accessKey, secretKey, gateway.getUrl())){
+                                        break;
+                                }
+                            }
+                        if(this.s3Client!= null){
+                            foreach(string filename in  filesToDownload){
+                                GetObjectRequest request = new GetObjectRequest();
+                                request.BucketName       = bucketNameOvrd;
+                                request.Key              = filename;                             
+                                GetObjectResponse response = this.s3Client.GetObject(request);
+                                string outputFileName = Path.Combine(outputDirectory,filename);
+                                Console.WriteLine(String.Format("Downloading file {0} from {1} to {2}",filename,bucketNameOvrd,outputFileName));
+                                S3UploadLibrary.writeToLog(String.Format("Downloading file {0} from {1} to {2}",filename,bucketNameOvrd,outputFileName));
+                                response.WriteResponseStreamToFile(outputFileName);
+                            }
+                        }else{
+                                string[] gways = S3UploadLibrary.s3Gateways.Select(x =>x.getUrl()).ToArray();
+                                Console.WriteLine("Error connecting to gateways provided in configuration:"+String.Join(";",gways));
+                                S3UploadLibrary.writeToLog("Error connecting to gateways provided in configuration:"+String.Join(";",gways));
+
+                        }
+                        }else{
+
+                            Console.WriteLine(outputDirectory+ " does not exist");
+                            S3UploadLibrary.writeToLog("Unable to initialize S3 client");
+
+                        }
+                     
+                    }else{
+                        Console.WriteLine("The following parameters are required to download a file from  S3:");
+                        Console.WriteLine("\t1. -b: Bucket Name.");
+                        Console.WriteLine("\t2.  -f: The file name without the path.");
+                        Console.WriteLine("\t2.  -f: The output file path.");
+
+                    }
+            } catch(Exception e){
+
+                    Console.WriteLine("Error downloading file from  S3");
+                    S3UploadLibrary.writeToLog("Error downloading file from  S3");
+                    Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                    S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+
+                
+            }
+               }
+
         public S3Uploader(){
              try{
                 new S3UploadLibrary();
@@ -128,27 +185,28 @@ namespace db2s3{
 
         public void checkOverrides(){
 
-             if( directoryOfUploadfilesOvrd != null){
+             if( !string.IsNullOrEmpty(directoryOfUploadfilesOvrd)){
                  S3UploadLibrary.directoryOfUploadfiles = S3UploadLibrary.checkUNCFilePath(directoryOfUploadfilesOvrd);
              }  
-             if( bucketNameOvrd != null){
+             if(  !string.IsNullOrEmpty(bucketNameOvrd)){
                  S3UploadLibrary.bucketName = bucketNameOvrd;
              } 
-             if( serverNameOvrd != null){
+             if( !string.IsNullOrEmpty(serverNameOvrd)){
                  S3UploadLibrary.serverName = serverNameOvrd;
              }            
-            if( serverIPAddressOvrd != null){
+            if( !string.IsNullOrEmpty(serverIPAddressOvrd)){
                 S3UploadLibrary.serverIPAddress = serverIPAddressOvrd;
             }          
-            if(accessIDOvrd !=null){
+            if(!string.IsNullOrEmpty(accessIDOvrd)){
                  S3UploadLibrary.accessID = accessIDOvrd;
             }
-             if(accessKeyOvrd !=null){
+             if(!string.IsNullOrEmpty(accessKeyOvrd)){
                  S3UploadLibrary.accessKey = accessKeyOvrd;
             }
-            if(filterFileExtensionOvrd !=null){
+            if(!string.IsNullOrEmpty(filterFileExtensionOvrd)){
                 S3UploadLibrary.filterFileExtension = filterFileExtensionOvrd;
             }
+            
 
         }
 
@@ -163,39 +221,6 @@ namespace db2s3{
                         return true;
                     };
         }
-
-       /* public static void getObjectFromS3(){
-           
-           try{
-                new S3UploadLibrary();
-                GetObjectRequest request = new GetObjectRequest();
-                request.BucketName = bucketNameOvrd;
-                request.Key        = fileToBeDownloaded;
-
-                              string accessKey = S3UploadLibrary.accessID;
-              string secretKey = S3UploadLibrary.accessKey;
-              foreach(S3Gateway gateway in s3Gateways){
-                   attemptedGateways.Add(gateway);
-                   if (initS3Client(accessKey, secretKey, gateway.getUrl())){
-                        break;
-                   }
-              }
-              if(this.s3Client!= null){
-                
-                GetObjectResponse response = s3Client.GetObject(request);
-                response.WriteResponseStreamToFile(S3UploadLibrary.checkUNCFilePath(outputFile));
-              }
-           } catch(Exception e){
-
-                Console.WriteLine("Error downloading file from  S3");
-                S3UploadLibrary.writeToLog("Error downloading file from  S3");
-                Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
-                S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
-
-               
-           }
-        }
-        */
 
         public bool initS3Client(string accessKey, string secretKey, string gateway){
               bool isConnected = false;
@@ -399,7 +424,7 @@ namespace db2s3{
              
 				
 				string [] fileEntries = Directory.GetFiles(targetDirectory);
-                if(S3UploadLibrary.filterFileExtension !=null){ 
+                if(S3UploadLibrary.filterFileExtension !=null && S3UploadLibrary.filterFileExtension !="" ){ 
 
                     
                     foreach(string fileName in fileEntries){
@@ -443,6 +468,7 @@ namespace db2s3{
      }
         public static void Main (string[] args){
                 string configFile 		= ""; 
+               string[] filesToBeDownloaded      =  null;
             try {	
                 for(int i =0; i< args.Length; i++){
                     if (args[0].ToLower()=="-h" ||args[0].ToLower()=="help" || args[0].ToLower()=="/?" || args[0].ToLower()=="?" ){
@@ -458,7 +484,8 @@ namespace db2s3{
                         Console.WriteLine(" -a: The Access ID used to connect to the S3 gateway");
                         Console.WriteLine(" -k: The Access key used to connect to the S3 gateway");
                         Console.WriteLine(" -x: The file extension type to filter from the directory specified by the -d option.");
-                                                        
+                        Console.WriteLine(" -f: A comma-separated list of files to be downloaded from the S3 bucket specified with the -b option.");
+                        Console.WriteLine(" -o: The output folder where the files downloaded are saved.");                                                        
                     } else if  ((i+1)< args.Length ) {
                         if(args[i].ToLower()=="-c" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
                         configFile =  args[(i+1)];	
@@ -477,14 +504,14 @@ namespace db2s3{
                         }else if(args[i].ToLower()=="-x" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
                             filterFileExtensionOvrd =  args[(i+1)];	
                         }else if(args[i].ToLower()=="-f" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
-                            fileToBeDownloaded =  args[(i+1)];	
+                            filesToBeDownloaded =  args[(i+1)].ToString().Split(',');	
                         }else if(args[i].ToLower()=="-o" && (args[(i+1)] != null && args[(i+1)].Length!=0)){
-                            outputFile =  args[(i+1)];	
+                            outputDirectory =  args[(i+1)];	
                         }
                     }
                
                  }	
-            //if(fileToBeDownloaded ==null){ 
+            if(filesToBeDownloaded ==null){ 
                 if(string.IsNullOrEmpty(configFile)){
                     
                         new  S3Uploader();
@@ -493,9 +520,9 @@ namespace db2s3{
                         new  S3Uploader(configFile);
                     }
 
-              /*  } else{
-
-                }*/
+                } else{
+                  new  S3Uploader(filesToBeDownloaded);
+                }
             }catch(Exception e) {
 
                 Console.WriteLine( S3UploadLibrary.getErrorMessage(e));

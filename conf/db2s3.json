@@ -1,10 +1,10 @@
 {
-    "directoryOfUploadfiles": "C:\\staging\\0"
+    "directoryOfUploadfiles": ""
     ,"filterFileExtension":""
     ,"logFileName": "db2s3_log"
     ,"bucketName": "db-backup-bucket"
-    ,"serverName":  "jump31"
-    ,"serverIPAddress": "172.25.30.31"
+    ,"serverName":  ""
+    ,"serverIPAddress": ""
     ,"additionalServerInfo":""
     ,"sqliteDatabaseName" : "db2s3" 
     ,"sqliteDatabaseFile" : "..\\db\\db2s3.sqlite" 
@@ -17,22 +17,22 @@
     ,"region":""
     ,"s3Gateways":[
         {
-         "address":"172.31.3.120"
+         "address":""
          ,"port": 8082
          ,"protocol":"https"
         }
        ,{
-        "address":"172.31.3.121"
+        "address":""
         ,"port": 8082
         ,"protocol":"https"
        }
        , {
-        "address":"172.19.45.120"
+        "address":""
         ,"port": 8082
         ,"protocol":"https"
        }
        , {
-        "address":"172.19.45.121"
+        "address":""
         ,"port": 8082
         ,"protocol":"https"
        }    
@@ -64,5 +64,4 @@
     ,"borderWidth":""
     ,"headerBgColor":""
     ,"urlValidityDays":1000
-
 }

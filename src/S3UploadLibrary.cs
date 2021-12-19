@@ -169,7 +169,7 @@ namespace db2s3{
                         bccAddress		                         = uploadConfig.bccAddress  ;
                         ccAddress		                         = uploadConfig.ccAddress  ;
                         smtpServer	                              = uploadConfig.smtpServer  ;
-                        smtpPort		                         = uploadConfig.smtpPort != null && uploadConfig.smtpPort.Length>0 ?Convert.ToInt32(uploadConfig.smtpPort):0  ;
+                        smtpPort		                         = !string.IsNullOrEmpty(uploadConfig.smtpPort) && uploadConfig.smtpPort.Length>0 ?Convert.ToInt32(uploadConfig.smtpPort):0  ;
                         sender			                    = uploadConfig.sender     ;
                         senderPassword		                    = uploadConfig.senderPassword  ;
                         isSSLEnabled		                    = uploadConfig.isSSLEnabled  ;
