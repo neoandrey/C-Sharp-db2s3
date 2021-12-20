@@ -164,20 +164,16 @@ namespace db2s3{
             List<Dictionary<string, object>>   tableMap =  new List<Dictionary<string, object>>();
             itemsUploaded.ForEach(x=> tableMap.Add(x.convertToMap()));
             DataTable    uploadedItemsTable   = S3UploadLibrary.getDataTable(tableMap);  
-              
-            foreach (DataRow row in uploadedItemsTable.Rows){
-                foreach (DataColumn col in uploadedItemsTable.Columns){
-                    Console.WriteLine(row[col.ColumnName]);
-
-                }
-
-            }
             string  exportFile                = AppDomain.CurrentDomain.BaseDirectory+"..\\csv\\db2s3_uploaded_items_"+S3UploadLibrary.todaysDate+".csv";
             if (itemsUploaded.Count >  0){
                 S3UploadLibrary.exportCSV(uploadedItemsTable,  exportFile);
-                if(S3UploadLibrary.sendNotification)	S3UploadLibrary.sendMailNotification(new Dictionary<string, DataTable>(){{"File Upload Report",uploadedItemsTable}});
+                if(S3UploadLibrary.sendNotification 
+                  //  && !string.IsNullOrEmpty(S3UploadLibrary.emailError.ToString())  
+                 )	S3UploadLibrary.sendMailNotification(new Dictionary<string, DataTable>(){{"File Upload Report",uploadedItemsTable}});
             }else{
-                 if(S3UploadLibrary.sendNotification)	S3UploadLibrary.sendMailNotification(new Dictionary<string, DataTable>(){{"Empty File Upload Report. No File to Upload.",new DataTable()}});
+                 if(S3UploadLibrary.sendNotification 
+                    // && !string.IsNullOrEmpty(S3UploadLibrary.emailError.ToString())
+                   )	S3UploadLibrary.sendMailNotification(new Dictionary<string, DataTable>(){{"Empty File Upload Report. No File to Upload.",new DataTable()}});
             }
    
         }
@@ -193,7 +189,6 @@ namespace db2s3{
               session.setStatus(S3UploadLibrary.PENDING);
               return session;
         }
-
         public void checkOverrides(){
 
              if( !string.IsNullOrEmpty(directoryOfUploadfilesOvrd)){

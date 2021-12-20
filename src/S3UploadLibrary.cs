@@ -238,97 +238,102 @@ namespace db2s3{
 								}
 					}
 				}
-			  if ( !string.IsNullOrEmpty(S3UploadLibrary.toAddress)){
-				Console.WriteLine("Sending Notification... ");
-				S3UploadLibrary.writeToLog("Sending Notification... ");
-				message.From = new MailAddress(S3UploadLibrary.fromAddress);				
-				message.Subject = "S3 Upload Session SReport for "+S3UploadLibrary.directoryOfUploadfiles+" at  "+DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss");
-				message.IsBodyHtml = true;
-		
-				emailBody.AppendLine("<style type=\"text/css\">");
-				emailBody.AppendLine("table.gridtable {");
-				emailBody.AppendLine("	font-family:"+S3UploadLibrary.emailFontFamily+";");
-				emailBody.AppendLine("	font-size:"+S3UploadLibrary.emailFontSize+";");
-				emailBody.AppendLine("	color:"+S3UploadLibrary.borderColour+";");
-				emailBody.AppendLine("	border-width:"+S3UploadLibrary.borderWidth+";");
-				emailBody.AppendLine("	border-color: "+S3UploadLibrary.borderColour+";");
-				emailBody.AppendLine("	border-collapse: collapse;");
-				emailBody.AppendLine("}");
-				emailBody.AppendLine("table.gridtable th {");
-				emailBody.AppendLine("	border-width: "+S3UploadLibrary.borderWidth+";");
-				emailBody.AppendLine("	padding: 8px;");
-				emailBody.AppendLine("	border-style: solid;");
-				emailBody.AppendLine("	border-color:"+S3UploadLibrary.borderColour+";");
-				emailBody.AppendLine("	background-color:"+S3UploadLibrary.headerBgColor+";");
-				emailBody.AppendLine("}");
-				emailBody.AppendLine("table.gridtable td {");
-				emailBody.AppendLine("	border-width: 1px;");
-				emailBody.AppendLine("	padding: 8px;");
-				emailBody.AppendLine("	border-style: solid;");
-				emailBody.AppendLine("	border-color: "+S3UploadLibrary.borderColour+";");
-				emailBody.AppendLine("}");
-				emailBody.AppendLine("</style>");
-				
-				foreach(KeyValuePair<string, DataTable>  tabMap in dTableMap){
-					 emailBody.AppendLine("<div>\n</div>");
-				
-				     emailBody.AppendLine("<div><hr/></div>");
-					 emailBody.AppendLine("<div justify=\"left\"><table class=\"gridtable\">");
-					 emailBody.AppendLine("<thead>");
-				     emailBody.AppendLine("<caption style=\"color:gray\" justify=\"left\">"+tabMap.Key+"</caption>");
-					 foreach (DataColumn col in tabMap.Value.Columns){
-					 	emailBody.AppendLine("<th>"+col.ColumnName+"</th>");
-					 }
-					 
-					emailBody.AppendLine("</thead>");
-					emailBody.AppendLine("<tbody>");
-					
-					int k = 0;
-			        foreach (DataRow row in tabMap.Value.Rows) {
-                      if(k%2!=0){
-								emailBody.AppendLine("<tr style=\"background-color:#ffffff\"> ");   // <td>"+row["INDEX_NO"]+"</td><td>"+row["PARAMETER"]+"</td><td>"+row["VALUE"]+"</td></tr>");
-					    } else{
-								emailBody.AppendLine("<tr style=\"background-color:"+S3UploadLibrary.alternateRowColour+"\">"); //<td>"+row["INDEX_NO"]+"</td><td>"+row["PARAMETER"]+"</td><td>"+row["VALUE"]+"</td></tr>");
-					  }
-					
-					  foreach(DataColumn dCol in  tabMap.Value.Columns){
-						  if(dCol.ToString()=="no."){
-							  		emailBody.AppendLine("<td>"+(int.Parse(row[dCol.ToString()].ToString()) +1)+"</td>");
+			  if ( !string.IsNullOrEmpty(S3UploadLibrary.smtpServer)){
+                         if ( !string.IsNullOrEmpty(S3UploadLibrary.toAddress)){
+                              Console.WriteLine("Sending Notification... ");
+                              S3UploadLibrary.writeToLog("Sending Notification... ");
+                              message.From = new MailAddress(S3UploadLibrary.fromAddress);				
+                              message.Subject = "S3 Upload Session SReport for "+S3UploadLibrary.directoryOfUploadfiles+" at  "+DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss");
+                              message.IsBodyHtml = true;
+                    
+                              emailBody.AppendLine("<style type=\"text/css\">");
+                              emailBody.AppendLine("table.gridtable {");
+                              emailBody.AppendLine("	font-family:"+S3UploadLibrary.emailFontFamily+";");
+                              emailBody.AppendLine("	font-size:"+S3UploadLibrary.emailFontSize+";");
+                              emailBody.AppendLine("	color:"+S3UploadLibrary.borderColour+";");
+                              emailBody.AppendLine("	border-width:"+S3UploadLibrary.borderWidth+";");
+                              emailBody.AppendLine("	border-color: "+S3UploadLibrary.borderColour+";");
+                              emailBody.AppendLine("	border-collapse: collapse;");
+                              emailBody.AppendLine("}");
+                              emailBody.AppendLine("table.gridtable th {");
+                              emailBody.AppendLine("	border-width: "+S3UploadLibrary.borderWidth+";");
+                              emailBody.AppendLine("	padding: 8px;");
+                              emailBody.AppendLine("	border-style: solid;");
+                              emailBody.AppendLine("	border-color:"+S3UploadLibrary.borderColour+";");
+                              emailBody.AppendLine("	background-color:"+S3UploadLibrary.headerBgColor+";");
+                              emailBody.AppendLine("}");
+                              emailBody.AppendLine("table.gridtable td {");
+                              emailBody.AppendLine("	border-width: 1px;");
+                              emailBody.AppendLine("	padding: 8px;");
+                              emailBody.AppendLine("	border-style: solid;");
+                              emailBody.AppendLine("	border-color: "+S3UploadLibrary.borderColour+";");
+                              emailBody.AppendLine("}");
+                              emailBody.AppendLine("</style>");
+                              
+                              foreach(KeyValuePair<string, DataTable>  tabMap in dTableMap){
+                                   emailBody.AppendLine("<div>\n</div>");
+                              
+                                   emailBody.AppendLine("<div><hr/></div>");
+                                   emailBody.AppendLine("<div justify=\"left\"><table class=\"gridtable\">");
+                                   emailBody.AppendLine("<thead>");
+                                   emailBody.AppendLine("<caption style=\"color:gray\" justify=\"left\">"+tabMap.Key+"</caption>");
+                                   foreach (DataColumn col in tabMap.Value.Columns){
+                                        emailBody.AppendLine("<th>"+col.ColumnName+"</th>");
+                                   }
+                                   
+                                   emailBody.AppendLine("</thead>");
+                                   emailBody.AppendLine("<tbody>");
+                                   
+                                   int k = 0;
+                              foreach (DataRow row in tabMap.Value.Rows) {
+                              if(k%2!=0){
+                                                  emailBody.AppendLine("<tr style=\"background-color:#ffffff\"> ");   // <td>"+row["INDEX_NO"]+"</td><td>"+row["PARAMETER"]+"</td><td>"+row["VALUE"]+"</td></tr>");
+                                   } else{
+                                                  emailBody.AppendLine("<tr style=\"background-color:"+S3UploadLibrary.alternateRowColour+"\">"); //<td>"+row["INDEX_NO"]+"</td><td>"+row["PARAMETER"]+"</td><td>"+row["VALUE"]+"</td></tr>");
+                                   }
+                                   
+                                   foreach(DataColumn dCol in  tabMap.Value.Columns){
+                                        if(dCol.ToString()=="no."){
+                                                       emailBody.AppendLine("<td>"+(int.Parse(row[dCol.ToString()].ToString()) +1)+"</td>");
 
-						  }else  {
+                                        }else  {
 
-								emailBody.AppendLine("<td>"+ row[dCol.ToString()].ToString()+"</td>");
-						  }						   
-					  }
-					  emailBody.AppendLine("</tr>");
-				      ++k;
-			        }
-					 emailBody.AppendLine("</tbody>");
-			         emailBody.AppendLine("</table></div>");
-				 }
-			    
- 		   emailBody.AppendLine("<div><hr/></div>");
-			if(!string.IsNullOrWhiteSpace(emailError.ToString())){
-				emailBody.AppendLine("<div><h3><ul> Error List </h3></ul></div>");
-				emailBody.AppendLine("<div>\n</div>");
-				emailBody.AppendLine(emailError.ToString());
-			}
-			emailBody.AppendLine("<div>\n</div>");
-				emailBody.AppendLine("<div>\n</div>");
-			emailBody.AppendLine("Thank you.");
-			
-	        message.Body = emailBody.ToString();
-			SmtpClient smtpClient = new SmtpClient();
-			smtpClient.UseDefaultCredentials = true;
+                                                  emailBody.AppendLine("<td>"+ row[dCol.ToString()].ToString()+"</td>");
+                                        }						   
+                                   }
+                                   emailBody.AppendLine("</tr>");
+                                   ++k;
+                              }
+                                   emailBody.AppendLine("</tbody>");
+                              emailBody.AppendLine("</table></div>");
+                              }
+                         
+                    emailBody.AppendLine("<div><hr/></div>");
+                         if(!string.IsNullOrWhiteSpace(emailError.ToString())){
+                              emailBody.AppendLine("<div><h3><ul> Error List </h3></ul></div>");
+                              emailBody.AppendLine("<div>\n</div>");
+                              emailBody.AppendLine(emailError.ToString());
+                         }
+                         emailBody.AppendLine("<div>\n</div>");
+                              emailBody.AppendLine("<div>\n</div>");
+                         emailBody.AppendLine("Thank you.");
+                         
+                    message.Body = emailBody.ToString();
+                         SmtpClient smtpClient = new SmtpClient();
+                         smtpClient.UseDefaultCredentials = true;
 
-			smtpClient.Host = S3UploadLibrary.smtpServer;
-			smtpClient.Port = Int32.Parse(S3UploadLibrary.smtpPort.ToString());
-			smtpClient.EnableSsl = S3UploadLibrary.isSSLEnabled;
-			smtpClient.Credentials = new System.Net.NetworkCredential(S3UploadLibrary.sender, S3UploadLibrary.senderPassword);
-			smtpClient.Send(message);
+                         smtpClient.Host = S3UploadLibrary.smtpServer;
+                         smtpClient.Port = Int32.Parse(S3UploadLibrary.smtpPort.ToString());
+                         smtpClient.EnableSsl = S3UploadLibrary.isSSLEnabled;
+                         smtpClient.Credentials = new System.Net.NetworkCredential(S3UploadLibrary.sender, S3UploadLibrary.senderPassword);
+                         smtpClient.Send(message);
+                    }else{
+                              Console.WriteLine("Email could not be sent as there is no recepient in the toAddress field. ");
+                              writeToLog("Email could not be sent as there is no recepient in the toAddress field.");
+                    }
             }else{
-                 	Console.WriteLine("Email could not be sent as there is no recepient in the toAddress field. ");
-				writeToLog("Email could not be sent as there is no recepient in the toAddress field.");
+                 	Console.WriteLine("Email could not be sent as there is no SMTP server specified: "+S3UploadLibrary.smtpServer);
+				writeToLog("Email could not be sent as there is no SMTP server specified: "+S3UploadLibrary.smtpServer);
 
             }
 		} catch(Exception  e){
@@ -363,26 +368,6 @@ namespace db2s3{
                     
                }
 
-			public static Dictionary<string,string>readJSONMap(ArrayList rawMap){
-
-                    Dictionary<string, string> tempDico = new  Dictionary<string, string>();
-                    string tempVal  ="";
-                    if(rawMap!=null)
-                    foreach(var keyVal in rawMap){
-                                
-                        tempVal = keyVal.ToString();
-                        if(!string.IsNullOrEmpty(tempVal)){
-                            tempVal = tempVal.Replace("{","").Replace("}","").Replace("\"","").Trim();
-                           // Console.WriteLine("tempVal: "+tempVal);
-                            if(tempVal.Split(':').Count() ==2)tempDico.Add(tempVal.Split(':')[0].Trim(),tempVal.Split(':')[1].Trim());
-                            else if(tempVal.Split(':').Count() ==3  && "ABCDEFGHIJKLMNOPQRSTUVQXYZ".Contains(tempVal.Split(':')[1].Trim().ToUpper() )) {
-                                tempDico.Add(tempVal.Split(':')[0].Trim(),tempVal.Split(':')[1].Trim()+":"+tempVal.Split(':')[2].Trim());
-                            }  
-                        }  
-
-                    }
-                  return tempDico;
-            }
                 public static Dictionary<string, bool>convertToBoolMap(Dictionary<string,string> rawMap){
 
                     Dictionary<string, bool> tempDico = new  Dictionary<string, bool>();
