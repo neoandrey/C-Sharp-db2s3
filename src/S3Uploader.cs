@@ -85,6 +85,7 @@ namespace db2s3{
                         }
                      
                     }else{
+
                         Console.WriteLine("The following parameters are required to download a file from  S3:");
                         Console.WriteLine("\t1. -b: Bucket Name.");
                         Console.WriteLine("\t2.  -f: The file name without the path.");
@@ -160,9 +161,18 @@ namespace db2s3{
             this.getUploadSession().setEndTime(DateTime.Now);
             this.getUploadSession().setStatus(S3UploadLibrary.SUCCESSFUL);
             this.getUploadSession().save();
-            DataTable    uploadedItemsTable   = S3UploadLibrary.getDataTable(itemsUploaded);
-            string  exportFile                = S3UploadLibrary.logFile+"_items_uploaded.csv";
-            exportFile = exportFile.Replace("log","csv");
+            List<Dictionary<string, object>>   tableMap =  new List<Dictionary<string, object>>();
+            itemsUploaded.ForEach(x=> tableMap.Add(x.convertToMap()));
+            DataTable    uploadedItemsTable   = S3UploadLibrary.getDataTable(tableMap);  
+              
+            foreach (DataRow row in uploadedItemsTable.Rows){
+                foreach (DataColumn col in uploadedItemsTable.Columns){
+                    Console.WriteLine(row[col.ColumnName]);
+
+                }
+
+            }
+            string  exportFile                = AppDomain.CurrentDomain.BaseDirectory+"..\\csv\\db2s3_uploaded_items_"+S3UploadLibrary.todaysDate+".csv";
             if (itemsUploaded.Count >  0){
                 S3UploadLibrary.exportCSV(uploadedItemsTable,  exportFile);
                 if(S3UploadLibrary.sendNotification)	S3UploadLibrary.sendMailNotification(new Dictionary<string, DataTable>(){{"File Upload Report",uploadedItemsTable}});

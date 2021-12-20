@@ -145,6 +145,25 @@ public class S3UploadItem{
           return S3UploadLibrary.saveData(tableName, valueMap);   
      }
 
+      public Dictionary<string,Object> convertToMap(){
+
+               return  new Dictionary<string,Object>(){
+                              {"itemID"              ,this.itemID },
+                               {"sessionID"            , this.sessionID },
+                               {"parentFolder"         , this.parentFolder },
+                               {"fileName"             , this.fileName },
+                               {"bucketName"           , this.bucketName },
+                               {"creationTime"         , this.creationTime },
+                               {"fileSize"             , this.fileSize },
+                               {"uploadStartTime"     , this.uploadStartTime },
+                               {"uploadEndTime"       , this.uploadEndTime },
+                               {"fileUrl"              ,this.fileUrl },
+                              {"uploadStatus"          , this.uploadStatus  }            
+               };
+
+
+}
+
           public Dictionary<string,Object> getDict(){
 
                return  new Dictionary<string,Object>(){

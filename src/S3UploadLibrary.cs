@@ -23,7 +23,8 @@ namespace db2s3{
 
                public  const int FAILED = 2;
                 public  static System.IO.StreamWriter   	fs;
-                public  static string 					logFile		           = AppDomain.CurrentDomain.BaseDirectory+"..\\log\\db2s3_"+DateTime.Now.ToString("yyyyMMdd_HH_mm_ss")+".log";
+                public static string todaysDate    = DateTime.Now.ToString("yyyyMMdd_HH_mm_ss"); 
+                public  static string 					logFile		           = AppDomain.CurrentDomain.BaseDirectory+"..\\log\\db2s3_"+todaysDate+".log";
                public static string                         directoryOfUploadfiles;
                public static List<S3Gateway>                s3Gateways;     
                public static string                         bucketName;
@@ -110,8 +111,7 @@ namespace db2s3{
                     try{
                               if(File.Exists(configFileName)){
 
-
-                              initS3UploadLibrary();
+                                   initS3UploadLibrary();
 
                               }
                          }catch(Exception e){
@@ -145,10 +145,10 @@ namespace db2s3{
                         uploadConfig                             = Newtonsoft.Json.JsonConvert.DeserializeObject<S3UploadConfig>(propertyString); 
                         directoryOfUploadfiles                   = uploadConfig.directoryOfUploadfiles;
                         s3Gateways	                              = uploadConfig.s3Gateways;
-                        logFile    	                         = uploadConfig.logFileName;
-                        bucketName 	                         = uploadConfig.bucketName !=null ? uploadConfig.bucketName.Replace("_","-") :"db2s3";
+                        logFile    	                         = string.IsNullOrEmpty(uploadConfig.logFileName)?logFile:uploadConfig.logFileName;
+                        bucketName 	                         = !string.IsNullOrEmpty(uploadConfig.bucketName) ? uploadConfig.bucketName.Replace("_","-") :"db2s3";
                         serverName	                              = uploadConfig.serverName  ;
-                        serverIPAddress 	                    = uploadConfig.serverIPAddress  ;
+                        serverIPAddress 	                    = uploadConfig.serverIPAddress;
                         additionalServerInfo                     = uploadConfig.additionalServerInfo ;
                         sqliteDBName                             = uploadConfig.sqliteDatabaseName;
                         sqliteDatabaseFile                       = uploadConfig.sqliteDatabaseFile ;   
@@ -165,7 +165,7 @@ namespace db2s3{
                         scheduleName	 	                    = uploadConfig.scheduleName ;
                         sendNotification 	                    = uploadConfig.sendNotification ;
                         toAddress 	 	                         = uploadConfig.toAddress  ;
-                        fromAddress		                    = uploadConfig.fromAddress ;
+                        fromAddress		                    = string.IsNullOrEmpty(uploadConfig.fromAddress)?fromAddress:uploadConfig.fromAddress;
                         bccAddress		                         = uploadConfig.bccAddress  ;
                         ccAddress		                         = uploadConfig.ccAddress  ;
                         smtpServer	                              = uploadConfig.smtpServer  ;
@@ -217,6 +217,7 @@ namespace db2s3{
                     MailMessage message = new MailMessage();
 	
 				if ( !string.IsNullOrEmpty(S3UploadLibrary.toAddress)){
+
 					foreach (var address in S3UploadLibrary.toAddress.Split(new [] {S3UploadLibrary.emailSeparator}, StringSplitOptions.RemoveEmptyEntries)){
 							if(!string.IsNullOrWhiteSpace(address)){
 										message.To.Add(address);   	
@@ -394,24 +395,28 @@ namespace db2s3{
 						}
                   return tempDico;
             }
-          public static DataTable getDataTable<T>(List<T> items)
+          public static DataTable getDataTable (List<Dictionary<string,object>> items)
           {
-               DataTable dataTable = new DataTable(typeof(T).Name);
-               PropertyInfo[] Props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-               foreach (PropertyInfo prop in Props)
-               {
-                    dataTable.Columns.Add(prop.Name);
-               }
-               foreach (T item in items)
-               {
-                    var values = new object[Props.Length];
-                    for (int i = 0; i < Props.Length; i++)
+               DataTable dataTable = new DataTable();
+               if (items.Count >0){
+                    
+                    foreach (string column in items[0].Keys)
                     {
-                         values[i] = Props[i].GetValue(item, null);
+                         dataTable.Columns.Add(column);
+                         Console.WriteLine(column);
                     }
-                    dataTable.Rows.Add(values);
+               foreach(Dictionary<string,object> item in items){
+                     var record = new object[item.Count];
+                     int i = 0;
+                    foreach(object value in item.Values)
+                         {
+
+                              record[i]=value;
+                              ++i;
+                         }
+                          dataTable.Rows.Add(record);
                }
-               
+               }
                return dataTable;
           }
           
@@ -435,6 +440,7 @@ namespace db2s3{
                     for (int i = 0; i < dtDataTable.Columns.Count; i++) {  
                     if (!Convert.IsDBNull(dr[i])) {  
                          string value = dr[i].ToString();  
+                         Console.WriteLine(value);
                          if (value.Contains(',')) {  
                                    value = String.Format("\"{0}\"", value);  
                                    sw.Write(value);  
