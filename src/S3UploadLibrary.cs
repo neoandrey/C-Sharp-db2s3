@@ -403,7 +403,7 @@ namespace db2s3{
                     foreach (string column in items[0].Keys)
                     {
                          dataTable.Columns.Add(column);
-                         Console.WriteLine(column);
+                        
                     }
                foreach(Dictionary<string,object> item in items){
                      var record = new object[item.Count];
