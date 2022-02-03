@@ -1,8 +1,9 @@
 {
-    "directoryOfUploadfiles": ""
+    "directoryOfUploadfiles": "C:\\Staging\\A"
     ,"filterFileExtension":""
     ,"logFileName": "db2s3_log"
     ,"bucketName": "db-backup-bucket"
+    ,"scanSubfolders":true
     ,"serverName":  ""
     ,"serverIPAddress": ""
     ,"additionalServerInfo":""

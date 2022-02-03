@@ -55,6 +55,7 @@ namespace db2s3
         public string      filterFileExtension {get; set;}
 
         public int      urlValidityDays {get; set;}
+         public bool      scanSubfolders {get; set;}
 
 
     }

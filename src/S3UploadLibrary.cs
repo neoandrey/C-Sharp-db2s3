@@ -83,6 +83,8 @@ namespace db2s3{
                public static string filterFileExtension;
 
                public static int urlValidityDays;
+
+               public static bool scanSubfolders = true;
                
 
             public  S3UploadLibrary(){ 
@@ -188,7 +190,7 @@ namespace db2s3{
                         borderWidth                              = uploadConfig.borderWidth;
                         filterFileExtension                      = uploadConfig.filterFileExtension;
                         urlValidityDays                          = uploadConfig.urlValidityDays;
-                                             
+                        scanSubfolders                           = uploadConfig.scanSubfolders;               
                     }catch(Exception e){
 
                          Console.WriteLine("Error reading configuration file: "+e.Message);
@@ -243,7 +245,7 @@ namespace db2s3{
                               Console.WriteLine("Sending Notification... ");
                               S3UploadLibrary.writeToLog("Sending Notification... ");
                               message.From = new MailAddress(S3UploadLibrary.fromAddress);				
-                              message.Subject = "S3 Upload Session SReport for "+S3UploadLibrary.directoryOfUploadfiles+" at  "+DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss");
+                              message.Subject = "S3 Upload Session Report for "+S3UploadLibrary.directoryOfUploadfiles+" at  "+DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss");
                               message.IsBodyHtml = true;
                     
                               emailBody.AppendLine("<style type=\"text/css\">");
@@ -263,7 +265,7 @@ namespace db2s3{
                               emailBody.AppendLine("	background-color:"+S3UploadLibrary.headerBgColor+";");
                               emailBody.AppendLine("}");
                               emailBody.AppendLine("table.gridtable td {");
-                              emailBody.AppendLine("	border-width: 1px;");
+                              emailBody.AppendLine("	border-width:"+S3UploadLibrary.borderWidth+";");
                               emailBody.AppendLine("	padding: 8px;");
                               emailBody.AppendLine("	border-style: solid;");
                               emailBody.AppendLine("	border-color: "+S3UploadLibrary.borderColour+";");
@@ -275,7 +277,7 @@ namespace db2s3{
                               
                                    emailBody.AppendLine("<div><hr/></div>");
                                    emailBody.AppendLine("<div justify=\"left\"><table class=\"gridtable\">");
-                                   emailBody.AppendLine("<thead>");
+                                   emailBody.AppendLine("<thead bgcolor="+S3UploadLibrary.headerBgColor+">");
                                    emailBody.AppendLine("<caption style=\"color:gray\" justify=\"left\">"+tabMap.Key+"</caption>");
                                    foreach (DataColumn col in tabMap.Value.Columns){
                                         emailBody.AppendLine("<th>"+col.ColumnName+"</th>");

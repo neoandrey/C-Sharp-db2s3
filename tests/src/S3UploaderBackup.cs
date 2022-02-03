@@ -358,23 +358,49 @@ namespace db2s3{
                     long lastUploadedItemID  = S3UploadLibrary.getLastID( "upload_items", "item_id", "max_item_id");
                     this.checkCertificate();
                     foreach( S3UploadEntity entity in entities){
-                     currentFile = entity.fullName; 
-                     if(File.Exists(currentFile)){
-                     try{            
+
+                     try{
+                        
                         Console.WriteLine(String.Format("Uploading file {0} to bucket {1}...",entity.getName(),S3UploadLibrary.bucketName));
                         S3UploadLibrary.writeToLog(String.Format("Uploading file {0} to bucket {1}...",entity.getName(),S3UploadLibrary.bucketName));
                         Dictionary<string,string> metadata = new Dictionary<string,string>(); 
+                        currentFile = entity.fullName; 
+                                                //metadata.Add("x-amz-meta-filepath",currentFile); 
                         
-                        Console.WriteLine(String.Format("Uploading file: {0}, with key: {1}",entity.getName(),entity.getEntityKey()));
+                        /*                       FileStream fs = File.Open(entity.getFullName(), FileMode.Open, FileAccess.Read);
+                                                //BufferedStream bs = new BufferedStream(fs);
+                                                metadata.Add("x-amz-meta-filepath",currentFile); 
+
+                                            PutObjectRequest request =new S3.Transfer.TransferUtilityUploadRequest()
+                        {
+                        FilePath = entity.getFullName(),
+                        BucketName = S3UploadLibrary.bucketName,
+                        Key = entity.getEntityKey(),
+                        StorageClass = S3StorageClass.ReducedRedundancy,
+                        ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256,
+                        CannedACL = S3CannedACL.Private,
+                            Timeout               = TimeSpan.FromSeconds(S3UploadLibrary.s3ConnectionTimeOut),
+                        ReadWriteTimeout      = TimeSpan.FromSeconds(S3UploadLibrary.s3ReadWriteTimeOut)    
+                        };
+                        IAsyncResult ar = transferUtility.BeginUpload(putObjectRequest, callback, null);
+                        ThreadPool.QueueUserWorkItem(c =>
+                        {
+                        transferUtility.EndUpload(ar);
+                        });
+                        */
+
+                        Console.WriteLine(String.Format("Uploading file with key: {0}",entity.getEntityKey()));
                         PutObjectRequest request = new PutObjectRequest(){
                              BucketName = S3UploadLibrary.bucketName
-                             ,Key = entity.getEntityKey() 
-                         
+                             ,Key = entity.getEntityKey() //entity.getName()
+                         //  ,metadata
                            ,AutoCloseStream = true
                            ,AutoResetStreamPosition = true
-                           
-                        , InputStream =  
+                            //,FilePath =  entity.getFullName() //File.OpenRead(entity.getFullName());
+                          // ,InputStream  = bs 
+                        , InputStream =  //new BufferedStream(
                              new FileStream( String.Format(@"{0}",entity.getFullName()), FileMode.Open, FileAccess.Read)
+                             //)//File.OpenRead(entity.getFullName())
                             ,Timeout               = TimeSpan.FromSeconds(S3UploadLibrary.s3ConnectionTimeOut)
                             ,ReadWriteTimeout      = TimeSpan.FromSeconds(S3UploadLibrary.s3ReadWriteTimeOut)                   
                         }; 
@@ -418,11 +444,6 @@ namespace db2s3{
                     S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
 
                 }
-            } else{
-                string skipMessage = String.Format("Skipping file {0} as it no longer exists.",currentFile);
-                Console.WriteLine(skipMessage);
-                S3UploadLibrary.writeToLog(skipMessage);
-            }
 
                     }
 

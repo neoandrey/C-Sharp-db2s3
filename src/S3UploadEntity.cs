@@ -123,6 +123,32 @@ namespace db2s3 {
 
         }
 
+        public string getEntityKey(){
+             //return this.fullName.Replace(this.getName(),"").Replace(S3UploadLibrary.directoryOfUploadfiles,"").Replace('\\','/');
+             string filePath = this.fullName;
+             Boolean isFolder   = false;
+             FileAttributes attr = File.GetAttributes(String.Format(@"{0}",filePath));
+
+            if ((attr & FileAttributes.Directory) == FileAttributes.Directory){
+                isFolder = true;
+            }
+
+
+             string key= this.fullName.Replace(S3UploadLibrary.directoryOfUploadfiles,"").Replace('\\','/').Replace(' ','_');
+             key = key.Trim();
+
+            if( isFolder && !string.IsNullOrEmpty(key) &&!key.EndsWith("/")){
+
+                key = key+"/";
+            }
+             if(key.StartsWith("/")){
+                 key= key.Substring(1);
+             }
+             key   = string.IsNullOrEmpty(key.Trim())?this.getName().Trim(): key.Trim();
+
+             return key ;
+        }
+
         public long getUploadSessionID(){
 
             return this.uploadSessionID;
