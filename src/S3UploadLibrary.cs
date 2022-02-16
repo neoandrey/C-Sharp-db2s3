@@ -85,6 +85,14 @@ namespace db2s3{
                public static int urlValidityDays;
 
                public static bool scanSubfolders = true;
+
+               public static long uploadPartionSize = 0;
+
+               public static  int  waitInterval    =  0;
+
+               public static  int   threadCount     =   1;
+
+               public static int    concurrentServiceRequests  =36;
                
 
             public  S3UploadLibrary(){ 
@@ -190,7 +198,11 @@ namespace db2s3{
                         borderWidth                              = uploadConfig.borderWidth;
                         filterFileExtension                      = uploadConfig.filterFileExtension;
                         urlValidityDays                          = uploadConfig.urlValidityDays;
-                        scanSubfolders                           = uploadConfig.scanSubfolders;               
+                        scanSubfolders                           = uploadConfig.scanSubfolders;  
+                        uploadPartionSize                        = uploadConfig.uploadPartionSize; 
+                        waitInterval                             = uploadConfig.waitInterval; 
+                        threadCount                              = uploadConfig.concurrency > 0 ?uploadConfig.concurrency: threadCount;  
+                        concurrentServiceRequests                = uploadConfig.concurrentServiceRequests > 0 ?uploadConfig.concurrentServiceRequests: concurrentServiceRequests;         
                     }catch(Exception e){
 
                          Console.WriteLine("Error reading configuration file: "+e.Message);
@@ -480,10 +492,28 @@ namespace db2s3{
         } 
 
         public static string getErrorMessage(Exception e){
+          var st = new StackTrace(e);
+          var frames = st.GetFrames();
+          var frame  = st.GetFrame(0);
+          foreach(var tempFrame in  frames){
+             if(string.IsNullOrEmpty(tempFrame.GetFileName())){
+                  frame = tempFrame;
+                  Console.WriteLine("\nFile Name: "+tempFrame.GetFileName()+"\n");
+                   Console.WriteLine("\nLine Name: "+tempFrame.GetFileLineNumber()+"\n");
+                    Console.WriteLine("\nLine Name: "+tempFrame.GetMethod()+"\n");
+                  break;
+             }
 
+          }
+          var line                     = frame.GetFileLineNumber();
+          var fileName                 = frame.GetFileName();
+           var column                  = frame.GetFileColumnNumber();
           StringBuilder errorBuilder   =  new StringBuilder();
           errorBuilder.Append("\nError Message: "+e.Message+"\n");
           errorBuilder.Append("\nError Source: "+e.Source+"\n");
+           errorBuilder.Append("\nFile Name: "+fileName+"\n");
+          errorBuilder.Append("\nLine number: "+line+"\n");
+          errorBuilder.Append("\nColumn: "+column+"\n");
           errorBuilder.Append("\nError Details: "+e.ToString()+"\n");
           return errorBuilder.ToString();
         }

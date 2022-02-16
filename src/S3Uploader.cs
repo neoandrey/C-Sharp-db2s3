@@ -13,6 +13,7 @@ using Newtonsoft.Json.Linq;
 using System.Data.SQLite;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
+using Amazon.S3.Transfer;
 
 // To interact with Amazon S3.
 using Amazon.S3;
@@ -25,6 +26,8 @@ namespace db2s3{
     class S3Uploader{
         public AmazonS3Client  s3Client;
 
+        public AmazonS3Client[]  s3Clients;
+
 //        public  static AmazonS3Client s3ClientForGet;
 
         public AmazonS3Config s3Config = new AmazonS3Config();
@@ -33,6 +36,9 @@ namespace db2s3{
         public  List<S3Gateway> s3Gateways;
         public S3UploadSession uploadSession;
         public  List<S3Gateway> attemptedGateways   =  new List<S3Gateway>();
+
+        public  List<Thread> s3UploadThreads   =  new List<Thread>();
+
         public static string directoryOfUploadfilesOvrd;
         public static string bucketNameOvrd;
         public static string serverNameOvrd;
@@ -42,7 +48,15 @@ namespace db2s3{
         public static string filterFileExtensionOvrd;
         public static string outputDirectory;
 
+        public static List<S3UploadItem> uploadedItems = new List<S3UploadItem>();
+
         public  List<S3UploadEntity> entitiesToBeUploaded =  new List<S3UploadEntity> ();
+         public   static object         addLocker                =  new object();
+
+         public   HashSet<Thread>          		   runningThreadSet                     = new HashSet<Thread>();
+         internal   HashSet<Thread>          		   pendingThreadSet                     = new HashSet<Thread>();
+
+         public long lastUploadedItemID  =0;
 
                public S3Uploader(string[] filesToDownload){
                 try{
@@ -146,6 +160,76 @@ namespace db2s3{
              this.s3Gateways = gateways;
         }
   
+         public AmazonS3Client initS3Clients(string accessKey, string secretKey){
+			AmazonS3Client  client = new AmazonS3Client(accessKey,secretKey,Amazon.RegionEndpoint.USEast1);
+			Random random = new Random();
+		    List<int> usedGatewayIndexes =  new List<int>();
+			int  currentIndex = 0;
+			int connectAttempts = this.s3Gateways.Count;
+            string[] gateways = S3UploadLibrary.s3Gateways.Select(x =>x.getUrl()).ToArray();
+            this.getUploadSession().setGateway(String.Join(";",gateways));
+
+		    for(int i=0; i< connectAttempts; ++i){
+				S3Gateway gateway = null;			
+				while(!usedGatewayIndexes.Contains(currentIndex) ||gateway == null  ){
+					currentIndex = random.Next(connectAttempts);
+				    gateway = this.s3Gateways[currentIndex];
+                    break;
+				}
+                 currentIndex = random.Next(connectAttempts);
+				 usedGatewayIndexes.Add(currentIndex);
+				  try{  
+                        
+						s3Config.ServiceURL  = gateway.getUrl();
+						s3Config.Timeout = TimeSpan.FromSeconds(S3UploadLibrary.s3ConnectionTimeOut);
+						s3Config.ForcePathStyle = true;
+						s3Config.ReadWriteTimeout = TimeSpan.FromSeconds(S3UploadLibrary.s3ReadWriteTimeOut);
+						s3Config.RetryMode = RequestRetryMode.Standard;
+						s3Config.MaxErrorRetry = 3;
+
+						BasicAWSCredentials basicCredentials = new BasicAWSCredentials(accessKey, secretKey);
+						this.checkCertificate();
+						this.getUploadSession().setGateway(gateway.getUrl());
+						S3UploadLibrary.writeToLog("Attempting to connect to gateway at: "+gateway.getUrl());
+						Console.WriteLine("Attempting to connect to gateway at: "+gateway.getUrl());
+                        
+						if(S3UploadLibrary.useProfile && File.Exists(S3UploadLibrary.profilePath)){
+							CredentialProfileStoreChain chain = new CredentialProfileStoreChain(S3UploadLibrary.profilePath);
+							AWSCredentials  awsCredentials;
+
+							if (chain.TryGetAWSCredentials(S3UploadLibrary.profileName, out awsCredentials))
+							{
+								client =  new AmazonS3Client(awsCredentials); //, basicProfile.Region)
+							   
+							}
+						} else{
+                        
+
+							 client = new AmazonS3Client(basicCredentials,s3Config);
+			  
+						} 
+
+						ListBucketsResponse buckets = client.ListBuckets();
+						if(buckets != null){
+							
+							S3UploadLibrary.writeToLog("Successfully connected to gateway at: "+gateway.getUrl());
+							Console.WriteLine("Successfully connected to gateway at: "+gateway.getUrl());
+							break;
+                         }
+						
+				
+				  }catch(Exception e ){
+
+					   Console.WriteLine("Unable to connect to S3 via gateway: "+gateway.getUrl() );
+					   Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+					   S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+					   S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
+
+				  } 
+			
+			}
+               return client;
+        }
         public  void runS3Upload(){
             S3UploadLibrary.writeToLog(String.Format("Scanning path {0} for files to upload...",S3UploadLibrary.directoryOfUploadfiles));
             Console.WriteLine(String.Format("Scanning path {0} for files to upload...",S3UploadLibrary.directoryOfUploadfiles));
@@ -156,17 +240,19 @@ namespace db2s3{
             //List<S3UploadEntity> entitiesToBeUploaded =  this.getEntitiesToBeUploaded(allS3EntitiesInPath, previouslyUploadedItems);
             this.setUploadSession(createUploadSession());
             //List<S3UploadItem> itemsUploaded =  startEntityUploadSession(entitiesToBeUploaded);
-            List<S3UploadItem> itemsUploaded =  startEntityUploadSession(allS3EntitiesInPath);
-            itemsUploaded.ForEach(x=>x.save());
-            this.getUploadSession().setUploadCount(itemsUploaded.Count);
+           // List<S3UploadItem> itemsUploaded =  startEntityUploadSession(allS3EntitiesInPath);
+            //itemsUploaded.ForEach(x=>x.save());
+            startEntityUploadSession(allS3EntitiesInPath);
+            uploadedItems.ForEach(x=>x.save());
+            this.getUploadSession().setUploadCount(uploadedItems.Count);
             this.getUploadSession().setEndTime(DateTime.Now);
             this.getUploadSession().setStatus(S3UploadLibrary.SUCCESSFUL);
             this.getUploadSession().save();
             List<Dictionary<string, object>>   tableMap =  new List<Dictionary<string, object>>();
-            itemsUploaded.ForEach(x=> tableMap.Add(x.convertToMap()));
+            uploadedItems.ForEach(x=> tableMap.Add(x.convertToMap()));
             DataTable    uploadedItemsTable   = S3UploadLibrary.getDataTable(tableMap);  
             string  exportFile                = AppDomain.CurrentDomain.BaseDirectory+"..\\csv\\db2s3_uploaded_items_"+S3UploadLibrary.todaysDate+".csv";
-            if (itemsUploaded.Count >  0){
+            if (uploadedItems.Count >  0){
                 S3UploadLibrary.exportCSV(uploadedItemsTable,  exportFile);
                 if(S3UploadLibrary.sendNotification 
                   //  && !string.IsNullOrEmpty(S3UploadLibrary.emailError.ToString())   
@@ -235,12 +321,14 @@ namespace db2s3{
                     s3Config.ServiceURL  = gateway;
                     s3Config.Timeout = TimeSpan.FromSeconds(1);
                     s3Config.ForcePathStyle = true;
-                    //s3Config.ReadWriteTimeout = TimeSpan.FromSeconds(10);
+                    s3Config.Timeout = TimeSpan.FromSeconds(S3UploadLibrary.s3ConnectionTimeOut);
+                    s3Config.ForcePathStyle = true;
+                    s3Config.ReadWriteTimeout = TimeSpan.FromSeconds(S3UploadLibrary.s3ReadWriteTimeOut);
                     //s3Config. RetryMode = RequestRetryMode.Standard;
                     //s3Config.MaxErrorRetry = 3;
                     BasicAWSCredentials basicCredentials = new BasicAWSCredentials(accessKey, secretKey);
                     this.checkCertificate();
-                    this.getUploadSession().setGateway(gateway);
+                    
                     S3UploadLibrary.writeToLog("Attempting to connect to gateway at: "+gateway);
                     Console.WriteLine("Attempting to connect to gateway at: "+gateway);
                     if(S3UploadLibrary.useProfile && File.Exists(S3UploadLibrary.profilePath)){
@@ -293,7 +381,7 @@ namespace db2s3{
             ListObjectsResponse listResponse;
             do
             {
-                listResponse = this.s3Client.ListObjects(listRequest);
+                listResponse = this.s3Clients[0].ListObjects(listRequest);
                 foreach (S3Object obj in listResponse.S3Objects)
                 {
                 var itemToRemove = allEntitiesInFolder.SingleOrDefault(x => x.getEntityKey() == obj.Key);
@@ -310,29 +398,138 @@ namespace db2s3{
 
         }
 
+     public void  uploadEntityToS3(S3UploadEntity  entity, AmazonS3Client s3UploadClient){    
+         string currentFile = entity.fullName; 
+         this.checkCertificate();
+         int retries =1;
+
+         if(File.Exists(currentFile)){     
+			try{   
+                         TransferUtilityConfig config = new TransferUtilityConfig();
+                          config.ConcurrentServiceRequests =   S3UploadLibrary.concurrentServiceRequests/retries > 4?  S3UploadLibrary.concurrentServiceRequests/retries:4;
+                          config.MinSizeBeforePartUpload   =   S3UploadLibrary.uploadPartionSize;
+
+                          TransferUtility fileTransferUtility = new TransferUtility(s3UploadClient,config); 
+                          DateTime startTime = DateTime.Now;   
+                          DateTime endTime = DateTime.Now;            
+                          Console.WriteLine(String.Format("Uploading file {0} to bucket {1}...",entity.getName(),S3UploadLibrary.bucketName));
+                          S3UploadLibrary.writeToLog(String.Format("Uploading file {0} to bucket {1}...",entity.getName(),S3UploadLibrary.bucketName));
+                          Dictionary<string,string> metadata = new Dictionary<string,string>(); 
+                          Console.WriteLine(String.Format("Uploading file: {0}, with key: {1}",entity.getName(),entity.getEntityKey()));
+                          FileInfo entityFile = new FileInfo(  String.Format(@"{0}",entity.getFullName()));
+                          if(entityFile.Length <= S3UploadLibrary.uploadPartionSize ){ 
+                             PutObjectRequest request    = new PutObjectRequest(){
+                                BucketName               = S3UploadLibrary.bucketName
+                                ,Key                     = entity.getEntityKey() 
+                                ,AutoCloseStream         = true
+                                ,AutoResetStreamPosition = true
+                                , InputStream            =  new FileStream( String.Format(@"{0}",entity.getFullName()), FileMode.Open, FileAccess.Read)
+                                ,Timeout                 = TimeSpan.FromSeconds(S3UploadLibrary.s3ConnectionTimeOut)
+                                ,ReadWriteTimeout        = TimeSpan.FromSeconds(S3UploadLibrary.s3ReadWriteTimeOut)                   
+                          }; 
+                        startTime                        = DateTime.Now;                 
+                        s3UploadClient.PutObject(request);              
+                        endTime                          = DateTime.Now;
+
+                    } else{ 
+                        long partitionSize = S3UploadLibrary.uploadPartionSize ;
+                        if ((long) ((float)entityFile.Length/(float)partitionSize) > 10000){
+                            partitionSize =  entityFile.Length/9984;
+                            Console.WriteLine(String.Format("Overriding setting for partition upload from {0} to {1}  because the original number of partitions exceed 10000: ",S3UploadLibrary.uploadPartionSize , partitionSize ));
+                            S3UploadLibrary.writeToLog(String.Format("Overriding setting for partition upload from {0} to {1}  because the original number of partitions exceed 10000: ",S3UploadLibrary.uploadPartionSize , partitionSize ));    
+                        }
+                        config.MinSizeBeforePartUpload = partitionSize;
+                        fileTransferUtility = new TransferUtility(s3UploadClient,config); 
+
+                        TransferUtilityUploadRequest request = new TransferUtilityUploadRequest (){
+                            BucketName = S3UploadLibrary.bucketName
+                            ,Key = entity.getEntityKey()                 
+                            ,AutoCloseStream = true
+                            ,AutoResetStreamPosition = true
+                            ,PartSize = partitionSize
+                           // , InputStream =  new FileStream( String.Format(@"{0}",entity.getFullName()), FileMode.Open, FileAccess.Read)
+                            , FilePath = String.Format(@"{0}",entity.getFullName())
+                            ,Timeout               = TimeSpan.FromSeconds(S3UploadLibrary.s3ConnectionTimeOut)
+                           // ,ReadWriteTimeout      = TimeSpan.FromSeconds(S3UploadLibrary.s3ReadWriteTimeOut)                   
+                        }; 
+                        request.Metadata.Add("size", String.Format("{0}",entityFile.Length.ToString()));
+                        request.Metadata.Add("path", String.Format("{0}",entity.getFullName()));
+                        request.Metadata.Add("source", String.Format("{0}",S3UploadLibrary.directoryOfUploadfiles));
+
+                        startTime = DateTime.Now;                 
+                        fileTransferUtility.Upload(request);
+                        endTime   = DateTime.Now;
+                    }                 
+                        GetPreSignedUrlRequest urlRequest = new GetPreSignedUrlRequest(){
+                               BucketName = S3UploadLibrary.bucketName
+                            ,Key = entity.getName()
+                            ,Expires = DateTime.Now.Add(new TimeSpan(S3UploadLibrary.urlValidityDays, 0, 0, 0))
+                        };  
+                        
+                        string url = s3UploadClient.GetPreSignedURL(urlRequest);
+                        
+                         lock(addLocker){
+                            ++lastUploadedItemID;
+                            uploadedItems.Add(
+                                new S3UploadItem()  
+                                {  
+                                itemID              = lastUploadedItemID, 
+                                sessionID           = this.getUploadSession().sessionID, 
+                                parentFolder        = this.getUploadDirectory(),  
+                                fileName            = entity.getFullName(),  
+                                bucketName          = S3UploadLibrary.bucketName,
+                                creationTime        = DateTime.Now,
+                                fileSize            = entity.getSize(),
+                                uploadStartTime     = startTime,
+                                uploadEndTime       = endTime,
+                                fileUrl             = url,   
+                                uploadStatus        = S3UploadLibrary.SUCCESSFUL
+                                }
+                                );
+                         }
 
 
-         public List<S3UploadItem> startEntityUploadSession(List<S3UploadEntity> allEntities){
-              List<S3UploadItem> uploadedItems = new List<S3UploadItem>();
+                }catch(Exception e){
+                    Console.WriteLine("Error uploading file: "+currentFile);
+                    S3UploadLibrary.writeToLog("Error uploading file: "+currentFile);
+                    Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
+                    S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
+                    S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
+                    Console.WriteLine("Retrying file upload for: "+currentFile);
+                    S3UploadLibrary.writeToLog("Retrying file upload for: "+currentFile);
+                    retries *=2;
+                    Random random        = new Random();
+                    int  s3ClientIndex   = random.Next(S3UploadLibrary.threadCount);
+                    uploadEntityToS3(entity,  s3Clients[s3ClientIndex]);
+
+                }
+              } else{
+                            string skipMessage = String.Format("Skipping file {0} as it no longer exists.",currentFile);
+                            Console.WriteLine(skipMessage);
+                            S3UploadLibrary.writeToLog(skipMessage);
+          }
+			
+	}
+         public void startEntityUploadSession(List<S3UploadEntity> allEntities){
+              
               List<S3UploadEntity> entities  = new List<S3UploadEntity> ();
                 
               this.getUploadSession().setStartTime(DateTime.Now);
               string accessKey = S3UploadLibrary.accessID;
               string secretKey = S3UploadLibrary.accessKey;
-              foreach(S3Gateway gateway in s3Gateways){
-                   attemptedGateways.Add(gateway);
-                   if (initS3Client(accessKey, secretKey, gateway.getUrl())){
-                        break;
-                   }
+              s3Clients = new AmazonS3Client[S3UploadLibrary.threadCount];
+                 
+              for(int i=0;  i < s3Clients.Length; ++i){
+                   s3Clients[i] = this.initS3Clients(accessKey, secretKey);       
               }
-              if(this.s3Client!= null){
+              if(this.s3Clients[0]!= null){
 
                   Console.WriteLine("Starting bucket upload");
                   S3UploadLibrary.writeToLog("Starting bucket upload");
-                  string currentFile = "None";
+                  //string currentFile = "None";
                   try{
                     
-                    ListBucketsResponse response = this.s3Client.ListBuckets();  
+                    ListBucketsResponse response = this.s3Clients[0].ListBuckets();  
                     bool found = false;  
                     foreach(S3Bucket bucket in response.Buckets) {  
                         if (bucket.BucketName == S3UploadLibrary.bucketName) {  
@@ -346,7 +543,7 @@ namespace db2s3{
                         S3UploadLibrary.writeToLog(String.Format("Bucket {0} not found. Creating bucket now...", S3UploadLibrary.bucketName));
                         //Console.WriteLine("Bucket Name: "+S3UploadLibrary.bucketName);
                         //Console.WriteLine("Bucket Region: "+S3UploadLibrary.region);
-                        PutBucketResponse buckResponse = this.s3Client.PutBucket(new PutBucketRequest(){BucketName = S3UploadLibrary.bucketName, BucketRegion  = S3UploadLibrary.region }); 
+                        PutBucketResponse buckResponse = this.s3Clients[0].PutBucket(new PutBucketRequest(){BucketName = S3UploadLibrary.bucketName, BucketRegion  = S3UploadLibrary.region }); 
         
                         Console.WriteLine("Bucket create Response: "+buckResponse.ToString());
                         S3UploadLibrary.writeToLog("Bucket create Response: "+buckResponse.ToString());
@@ -355,83 +552,48 @@ namespace db2s3{
 
                         entities= getUploadableEntities(allEntities);
                     }
-                    long lastUploadedItemID  = S3UploadLibrary.getLastID( "upload_items", "item_id", "max_item_id");
-                    this.checkCertificate();
+                    lastUploadedItemID  = S3UploadLibrary.getLastID( "upload_items", "item_id", "max_item_id");
+                  //  this.checkCertificate();
+                    int currentIndex = 0;
                     foreach( S3UploadEntity entity in entities){
-                     currentFile = entity.fullName; 
-                     if(File.Exists(currentFile)){
-                     try{            
-                        Console.WriteLine(String.Format("Uploading file {0} to bucket {1}...",entity.getName(),S3UploadLibrary.bucketName));
-                        S3UploadLibrary.writeToLog(String.Format("Uploading file {0} to bucket {1}...",entity.getName(),S3UploadLibrary.bucketName));
-                        Dictionary<string,string> metadata = new Dictionary<string,string>(); 
-                        
-                        Console.WriteLine(String.Format("Uploading file: {0}, with key: {1}",entity.getName(),entity.getEntityKey()));
-                        PutObjectRequest request = new PutObjectRequest(){
-                             BucketName = S3UploadLibrary.bucketName
-                             ,Key = entity.getEntityKey() 
-                         
-                           ,AutoCloseStream = true
-                           ,AutoResetStreamPosition = true
-                           
-                        , InputStream =  
-                             new FileStream( String.Format(@"{0}",entity.getFullName()), FileMode.Open, FileAccess.Read)
-                            ,Timeout               = TimeSpan.FromSeconds(S3UploadLibrary.s3ConnectionTimeOut)
-                            ,ReadWriteTimeout      = TimeSpan.FromSeconds(S3UploadLibrary.s3ReadWriteTimeOut)                   
-                        }; 
-
-                        
-                        DateTime startTime = DateTime.Now;                 
-                        this.s3Client.PutObject(request); 
-                        DateTime endTime   = DateTime.Now;
-                        
-                        GetPreSignedUrlRequest urlRequest = new GetPreSignedUrlRequest(){
-                               BucketName = S3UploadLibrary.bucketName
-                            ,Key = entity.getName()
-                            ,Expires = DateTime.Now.Add(new TimeSpan(S3UploadLibrary.urlValidityDays, 0, 0, 0))
-                        };  
-                        
-                        string url = this.s3Client.GetPreSignedURL(urlRequest);
-                        ++lastUploadedItemID;
-                        uploadedItems.Add(new S3UploadItem()  
-                            {  
-                            itemID              = lastUploadedItemID, 
-                            sessionID           = this.getUploadSession().sessionID, 
-                            parentFolder        = this.getUploadDirectory(),  
-                            fileName            = entity.getFullName(),  
-                            bucketName          = S3UploadLibrary.bucketName,
-                            creationTime        = DateTime.Now,
-                            fileSize            = entity.getSize(),
-                            uploadStartTime     = startTime,
-                            uploadEndTime       = endTime,
-                            fileUrl             = url,   
-                            uploadStatus        = S3UploadLibrary.SUCCESSFUL
-                            }
-                 );
-
-
-
-                }catch(Exception e){
-                    Console.WriteLine("Error uploading file: "+currentFile);
-                    S3UploadLibrary.writeToLog("Error uploading file: "+currentFile);
-                    Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
-                    S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
-                    S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
-
-                }
-            } else{
-                string skipMessage = String.Format("Skipping file {0} as it no longer exists.",currentFile);
-                Console.WriteLine(skipMessage);
-                S3UploadLibrary.writeToLog(skipMessage);
-            }
-
+                        Random random        = new Random();
+                        int clientCount      =   S3UploadLibrary.threadCount;
+                        int  s3ClientIndex   = random.Next(clientCount);
+                        Thread  uploadThread  = 	new Thread(()=> {
+                              uploadEntityToS3(entity,s3Clients[s3ClientIndex]);
+                        });
+                        uploadThread.Name    =   "uploadThread_"+currentIndex.ToString();
+                        s3UploadThreads.Add(uploadThread);
+                        ++currentIndex;
                     }
+                    Console.WriteLine("Threads successfully initialized");
+                    S3UploadLibrary.writeToLog("Threads successfully initialized");
+                    Console.WriteLine("waitInterval: "+S3UploadLibrary.waitInterval.ToString());
+                    S3UploadLibrary.writeToLog("waitInterval: "+S3UploadLibrary.waitInterval.ToString());
+                    Console.WriteLine("concurrentThreads: "+S3UploadLibrary.threadCount.ToString());
+
+                    for(int i=0; i< s3UploadThreads.Count; i++){
+
+                        if(s3UploadThreads[i]!= null && i< S3UploadLibrary.threadCount) {
+                            Console.WriteLine("Starting thread: "+i.ToString());
+                            S3UploadLibrary.writeToLog("Starting thread: "+i.ToString());
+                            s3UploadThreads[i].Start();
+                            runningThreadSet.Add(s3UploadThreads[i]);
+                        } else if(s3UploadThreads[i]!= null && i>= S3UploadLibrary.threadCount) {
+                            pendingThreadSet.Add(s3UploadThreads[i]);
+                        }
+                    }
+
+                    Console.WriteLine(String.Format("{0} threads started and {1} pending",runningThreadSet.Count,pendingThreadSet.Count));
+                    S3UploadLibrary.writeToLog(String.Format("{0} threads started and {1} pending",runningThreadSet.Count,pendingThreadSet.Count));
+                    wait(runningThreadSet, pendingThreadSet);
 
                   
 
                 }catch(Exception e){
                                    
                         //string[] gways = S3UploadLibrary.s3Gateways.Select(x =>x.getUrl()).ToArray();
-                        Console.WriteLine("Error creating creating bucket :"+ S3UploadLibrary.bucketName);
+                      //  Console.WriteLine("Error creating creating bucket :"+ S3UploadLibrary.bucketName);
                         Console.WriteLine( S3UploadLibrary.getErrorMessage(e));
                         S3UploadLibrary.writeToLog(S3UploadLibrary.getErrorMessage(e));
                         S3UploadLibrary.emailError.AppendLine("<div style=\"color:red\">  " + S3UploadLibrary.getErrorMessage(e)+"</div>"); 
@@ -446,7 +608,7 @@ namespace db2s3{
 
 
               }
-  return uploadedItems;
+  
          }
         
         public List<S3UploadEntity> getEntitiesToBeUploaded( List<S3UploadEntity> allEntitiesInFolder,  List<S3UploadItem> alreadyUploadedItems){
@@ -493,7 +655,108 @@ namespace db2s3{
 
 
         }
-     
+       public  void wait(HashSet<Thread> runningUploadThreadList, HashSet<Thread> pendingUploadThreadList){
+                 HashSet<Thread>runningUploadThreads   =  runningUploadThreadList;
+                  HashSet<Thread>pendingUploadThreads  =  pendingUploadThreadList;
+				  int activeThreadCount                  =  0;
+				  HashSet<string> completedThreadSet      =  new  HashSet<string>();
+				  int shouldWait                         =  1;
+				  int  skippedCount					     =  0;
+                  bool waited                            =  false;
+				  
+				  while(shouldWait!= 0){
+					  		 shouldWait                  =  0;
+						     skippedCount			     =  0;  
+                             activeThreadCount           =  0;
+							 foreach(Thread s3UploadThread  in runningUploadThreads){
+								 string threadName = s3UploadThread.Name;
+								if(s3UploadThread.IsAlive){
+                                     ++activeThreadCount; 
+                                     ++shouldWait;	 
+								}else{
+                                     if(!completedThreadSet.Contains(threadName)){
+                                        completedThreadSet.Add(threadName);		
+                                    }
+                               }
+						 	}
+            
+                         if(completedThreadSet.Count !=s3UploadThreads.Count){
+                           
+					        for (int k=0; k< runningUploadThreads.Count; ++k) {
+						        Thread runningThread = runningUploadThreads.ToArray()[k];
+
+								if( !runningThread.IsAlive && pendingUploadThreads.Count >0 && activeThreadCount < S3UploadLibrary.threadCount){
+                                        Console.WriteLine("Starting New Thread");
+                                        Thread newThread = pendingThreadSet.ToArray()[0];
+                                        newThread.Start();
+                                        ++activeThreadCount;
+                                        Console.WriteLine("New Thread started");
+                                        runningUploadThreads.Remove(runningThread);
+                                        runningUploadThreads.Add(newThread);
+                                        pendingUploadThreads.Remove(newThread);
+                                        ++shouldWait;
+                                   	
+								    } 
+                                } 
+                                
+							
+
+                            if( shouldWait >0){
+                                   
+                                    Console.WriteLine("Waiting for  " + S3UploadLibrary.waitInterval.ToString());
+                                    S3UploadLibrary.writeToLog("Waiting for  " + S3UploadLibrary.waitInterval.ToString());
+                                    Thread.Sleep(S3UploadLibrary.waitInterval); 
+                                    waited = true; 
+                            }
+
+							Console.WriteLine("Current completed thread count: "+completedThreadSet.Count.ToString());
+							Console.WriteLine("Current running count: "+activeThreadCount.ToString());
+                            Console.WriteLine("Pending Thread count: "+(!string.IsNullOrEmpty(pendingUploadThreads.Count.ToString())?pendingUploadThreads.Count.ToString():"0"));
+							S3UploadLibrary.writeToLog("Current completed thread count: " + completedThreadSet.Count.ToString());
+							S3UploadLibrary.writeToLog("Current running thread count: "+activeThreadCount.ToString());
+                            S3UploadLibrary.writeToLog("Pending Thread count: "+(!string.IsNullOrEmpty(pendingUploadThreads.Count.ToString())?pendingUploadThreads.Count.ToString():"0"));
+						} else{
+
+                            int j=0;
+							foreach (Thread uploadThread in  s3UploadThreads ) {
+
+								if( !uploadThread.IsAlive ){
+										if(!completedThreadSet.Contains(uploadThread.Name)){
+
+											completedThreadSet.Add(uploadThread.Name);
+
+									     }else{
+
+											 ++skippedCount;
+
+										 }
+								} else {
+									++shouldWait;
+								}
+                                j++;
+							}
+						}
+						Console.WriteLine("Current completed thread count: " + completedThreadSet.Count.ToString());
+                		Console.WriteLine("Current running count: " +activeThreadCount.ToString());
+               		    S3UploadLibrary.writeToLog("Current completed thread count: " + completedThreadSet.Count.ToString());
+                		S3UploadLibrary.writeToLog("Current running thread count: " + activeThreadCount.ToString());
+						if(skippedCount==s3UploadThreads.Count || shouldWait== 0){
+							
+							break;
+
+						} else{
+                            if(!waited){
+                             Console.WriteLine("Waiting for  " + S3UploadLibrary.waitInterval.ToString());
+                             S3UploadLibrary.writeToLog("Waiting for  " + S3UploadLibrary.waitInterval.ToString());
+                             Thread.Sleep(S3UploadLibrary.waitInterval);  
+                            }
+
+                        }
+				  }
+
+	
+
+			  }
              public  List<S3UploadEntity> getUploadEntitiesFromPath(string targetDirectory, bool scanSubfolders){
 		     List<S3UploadEntity> uploadEntities   =  new List<S3UploadEntity>();
   

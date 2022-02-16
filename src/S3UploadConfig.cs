@@ -57,6 +57,14 @@ namespace db2s3
         public int      urlValidityDays {get; set;}
          public bool      scanSubfolders {get; set;}
 
+         public long     uploadPartionSize{get; set;}
+
+         public int      waitInterval{get; set;}
+
+         public int      concurrency{get; set;}
+
+         public  int  concurrentServiceRequests{get; set;}
+
 
     }
 }

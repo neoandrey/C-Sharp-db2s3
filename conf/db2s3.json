@@ -4,6 +4,10 @@
     ,"logFileName": "db2s3_log"
     ,"bucketName": "db-backup-bucket"
     ,"scanSubfolders":true
+    ,"uploadPartionSize": 10485760
+    ,"waitInterval": 3000
+    ,"concurrency" :10
+    ,"concurrentServiceRequests": 36
     ,"serverName":  ""
     ,"serverIPAddress": ""
     ,"additionalServerInfo":""
